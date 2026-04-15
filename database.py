@@ -9,6 +9,8 @@ DATABASE_URL = "sqlite:///bot_database.db"
 engine = create_engine(
     DATABASE_URL,
     echo=False,
+    future=True,
+    pool_pre_ping=True,
     connect_args={"check_same_thread": False},  # necessário para SQLite com múltiplas threads
 )
 

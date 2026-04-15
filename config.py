@@ -1,5 +1,6 @@
 # config.py
-import os, re
+import os
+import secrets
 import pytz
 from dotenv import load_dotenv
 
@@ -44,19 +45,39 @@ def _validate_token(token: str) -> str:
 TOKEN = _validate_token(TOKEN)
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
-DASHBOARD_SECRET_KEY  = os.getenv("DASHBOARD_SECRET_KEY", "dev-secret-TROQUE-isso")
-DASHBOARD_PORT        = int(os.getenv("DASHBOARD_PORT", 5000))
-DASHBOARD_HOST        = os.getenv("DASHBOARD_HOST", "0.0.0.0")
-DASHBOARD_USERNAME    = os.getenv("DASHBOARD_USERNAME", "admin")
-DASHBOARD_PASSWORD    = os.getenv("DASHBOARD_PASSWORD", "")
+DASHBOARD_SECRET_KEY        = os.getenv("DASHBOARD_SECRET_KEY", "").strip()
+DASHBOARD_PORT              = int(os.getenv("DASHBOARD_PORT", 5000))
+DASHBOARD_HOST              = os.getenv("DASHBOARD_HOST", "0.0.0.0")
+DASHBOARD_USERNAME          = os.getenv("DASHBOARD_USERNAME", "admin").strip()
+DASHBOARD_PASSWORD          = os.getenv("DASHBOARD_PASSWORD", "").strip()
+# Use um hash seguro em vez de senha em texto puro.
+# Gere com: python -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('sua-senha'))"
+DASHBOARD_PASSWORD_HASH     = os.getenv("DASHBOARD_PASSWORD_HASH", "").strip()
+DASHBOARD_COOKIE_SECURE     = os.getenv("DASHBOARD_COOKIE_SECURE", "").lower() == "true" if not DEBUG else False
+DASHBOARD_SESSION_PERMANENT = os.getenv("DASHBOARD_SESSION_PERMANENT", "true").lower() == "true"
+DASHBOARD_SESSION_LIFETIME  = int(os.getenv("DASHBOARD_SESSION_LIFETIME_MINUTES", 60))
 
-if not DASHBOARD_PASSWORD:
-    import secrets
-    _pw = secrets.token_urlsafe(12)
-    print(f"\n[AVISO] DASHBOARD_PASSWORD não definido no .env")
-    print(f"  Usando senha temporária para esta sessão: {_pw}")
-    print(f"  Adicione ao .env: DASHBOARD_PASSWORD={_pw}\n")
-    DASHBOARD_PASSWORD = _pw
+if not DASHBOARD_SECRET_KEY:
+    if DEBUG:
+        DASHBOARD_SECRET_KEY = secrets.token_urlsafe(32)
+        print("\n[AVISO] DASHBOARD_SECRET_KEY não definido; usando valor temporário em DEBUG.\n")
+    else:
+        raise ValueError(
+            "DASHBOARD_SECRET_KEY obrigatório em produção. "
+            "Defina no .env para proteger sessões do dashboard."
+        )
+
+if not (DASHBOARD_PASSWORD or DASHBOARD_PASSWORD_HASH):
+    if DEBUG:
+        DASHBOARD_PASSWORD = secrets.token_urlsafe(12)
+        print(f"\n[AVISO] DASHBOARD_PASSWORD não definido no .env")
+        print(f"  Usando senha temporária para esta sessão: {DASHBOARD_PASSWORD}")
+        print("  Adicione ao .env: DASHBOARD_PASSWORD=<senha> ou DASHBOARD_PASSWORD_HASH=<hash>\n")
+    else:
+        raise ValueError(
+            "DASHBOARD_PASSWORD ou DASHBOARD_PASSWORD_HASH obrigatório em produção. "
+            "Defina no .env e use um hash seguro quando possível."
+        )
 
 # ── Google Sheets (opcional) ──────────────────────────────────────────────────
 GOOGLE_SHEETS_CREDENTIALS = os.getenv("GOOGLE_SHEETS_CREDENTIALS", "credentials/credentials.json")

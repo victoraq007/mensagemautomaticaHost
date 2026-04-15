@@ -2,7 +2,16 @@
 from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from config import DASHBOARD_SECRET_KEY, DASHBOARD_USERNAME, DASHBOARD_PASSWORD
+from werkzeug.security import check_password_hash
+from config import (
+    DASHBOARD_COOKIE_SECURE,
+    DASHBOARD_PASSWORD,
+    DASHBOARD_PASSWORD_HASH,
+    DASHBOARD_SECRET_KEY,
+    DASHBOARD_SESSION_LIFETIME,
+    DASHBOARD_SESSION_PERMANENT,
+    DASHBOARD_USERNAME,
+)
 from database import get_session
 from models import TaskConfig, MessageGroup, Message, Settings
 import json, datetime, functools, os
@@ -13,7 +22,11 @@ def create_app() -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.secret_key = DASHBOARD_SECRET_KEY
     app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SECURE"] = DASHBOARD_COOKIE_SECURE
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+    app.config["PERMANENT_SESSION_LIFETIME"] = datetime.timedelta(minutes=DASHBOARD_SESSION_LIFETIME)
+    app.config["SESSION_PERMANENT"] = DASHBOARD_SESSION_PERMANENT
 
     limiter = Limiter(
         get_remote_address,
@@ -45,11 +58,10 @@ def create_app() -> Flask:
         data = request.get_json(force=True) if request.is_json else request.form
         user = (data.get("username") or "").strip()
         pw   = (data.get("password") or "").strip()
-        import hmac
-        ok = hmac.compare_digest(user, DASHBOARD_USERNAME) and hmac.compare_digest(pw, DASHBOARD_PASSWORD)
+        ok = __import__("hmac").compare_digest(user, DASHBOARD_USERNAME) and _check_password(pw)
         if ok:
             session["logged_in"] = True
-            session.permanent = True
+            session.permanent = DASHBOARD_SESSION_PERMANENT
             if request.is_json:
                 return jsonify({"ok": True})
             return redirect("/")
@@ -237,9 +249,9 @@ def create_app() -> Flask:
                 name=d["name"].strip()[:200],
                 description=d.get("description","")[:500],
                 type=d["type"],
-                channel_ids=_norm(d["channel_ids"]),
+                channel_ids=_normalize_channels(d["channel_ids"]),
                 message_group_id=d.get("message_group_id") or None,
-                schedule_config=json.dumps(d.get("schedule_config",{})),
+                schedule_config=json.dumps(d.get("schedule_config", {})),
                 active=d.get("active", True),
                 test_mode=d.get("test_mode", False),
             )
@@ -259,13 +271,17 @@ def create_app() -> Flask:
     @limiter.limit("30/minute")
     def update_task(tid):
         d = request.get_json(force=True)
+        if d.get("type") and d.get("type") not in VALID_TYPES:
+            abort(400, "type inválido")
+        if "schedule_config" in d and not _valid_schedule_config(d.get("type") or "", d.get("schedule_config")):
+            abort(400, "schedule_config inválido ou mal formado")
         with get_session() as s:
             t = s.query(TaskConfig).filter_by(id=tid).first()
             if not t: abort(404)
             if d.get("name","").strip(): t.name = d["name"].strip()[:200]
             if "description"      in d: t.description    = d["description"][:500]
             if "type"             in d: t.type            = d["type"]
-            if "channel_ids"      in d: t.channel_ids     = _norm(d["channel_ids"])
+            if "channel_ids"      in d: t.channel_ids     = _normalize_channels(d["channel_ids"])
             if "message_group_id" in d: t.message_group_id= d["message_group_id"] or None
             if "schedule_config"  in d: t.schedule_config = json.dumps(d["schedule_config"])
             if "active"           in d: t.active          = bool(d["active"])
@@ -313,6 +329,16 @@ def create_app() -> Flask:
         if request.path.startswith("/api/"):
             return jsonify({"error": str(e)}), e.code
         return str(e), e.code
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer-when-downgrade"
+        response.headers["Permissions-Policy"] = "interest-cohort=()"
+        if app.config["SESSION_COOKIE_SECURE"]:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
 
     _register_pwa(app)
     return app
@@ -368,17 +394,52 @@ def _st(t):
 
 VALID_TYPES = {"fixed_times","interval_days","weekly","monthly","test"}
 
+def _normalize_channels(raw):
+    if isinstance(raw, list):
+        normalized = [str(x).strip() for x in raw if str(x).strip()]
+    else:
+        normalized = [x.strip() for x in str(raw).split(",") if x.strip()]
+    return ",".join(normalized)
+
+
+def _check_password(password: str) -> bool:
+    if DASHBOARD_PASSWORD_HASH:
+        return check_password_hash(DASHBOARD_PASSWORD_HASH, password)
+    return __import__("hmac").compare_digest(password, DASHBOARD_PASSWORD)
+
+
+def _valid_schedule_config(task_type, cfg):
+    if not isinstance(cfg, dict):
+        return False
+    if task_type == "fixed_times":
+        return isinstance(cfg.get("times", []), list)
+    if task_type == "interval_days":
+        return isinstance(cfg.get("every_days", 0), int)
+    if task_type in {"weekly", "monthly"}:
+        return isinstance(cfg.get("hour_start", 0), int)
+    if task_type == "test":
+        return isinstance(cfg.get("every_minutes", 0), int)
+    return False
+
+
 def _validate_task(d):
     e = []
-    if not (d.get("name") or "").strip(): e.append("name obrigatório")
-    if d.get("type") not in VALID_TYPES:  e.append(f"type inválido")
-    if not d.get("channel_ids"):          e.append("channel_ids obrigatório")
+    if not (d.get("name") or "").strip():
+        e.append("name obrigatório")
+    if d.get("type") not in VALID_TYPES:
+        e.append("type inválido")
+    if not d.get("channel_ids"):
+        e.append("channel_ids obrigatório")
+    if "schedule_config" in d:
+        cfg = d.get("schedule_config")
+        if not _valid_schedule_config(d.get("type"), cfg):
+            e.append("schedule_config inválido ou mal formado")
     return e
 
+
 def _norm(raw):
-    if isinstance(raw, list):
-        return ",".join(str(x).strip() for x in raw if str(x).strip())
-    return ",".join(x.strip() for x in str(raw).split(",") if x.strip())
+    return _normalize_channels(raw)
+
 
 def _next_run_desc(task_type, test_mode, cfg, now):
     if test_mode:

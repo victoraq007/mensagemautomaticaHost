@@ -84,6 +84,10 @@ def _active_tasks_as_dicts():
                 g = s.query(MessageGroup).filter_by(id=t.message_group_id).first()
                 if g:
                     msgs = [m.content for m in g.messages if m.active]
+            try:
+                schedule_config = json.loads(t.schedule_config or "{}")
+            except (ValueError, TypeError):
+                schedule_config = {}
             result.append({
                 "id":              t.id,
                 "name":            t.name,
@@ -91,14 +95,23 @@ def _active_tasks_as_dicts():
                 "test_mode":       bool(t.test_mode),
                 "active":          bool(t.active),
                 "channel_ids":     t.channel_ids or "",
-                "schedule_config": json.loads(t.schedule_config or "{}"),
+                "schedule_config": schedule_config,
                 "messages":        msgs,
             })
         return result
 
 
 def _get_channel_ids(task_dict):
-    return [int(x.strip()) for x in task_dict["channel_ids"].split(",") if x.strip()]
+    result = []
+    for value in str(task_dict.get("channel_ids", "")).split(","):
+        raw = value.strip()
+        if not raw:
+            continue
+        try:
+            result.append(int(raw))
+        except ValueError:
+            continue
+    return result
 
 
 class TasksCog(commands.Cog):
