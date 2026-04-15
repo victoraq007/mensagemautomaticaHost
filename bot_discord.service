@@ -1,0 +1,37 @@
+# /etc/systemd/system/bot_discord.service
+#
+# Instalação na VPS:
+#   sudo cp bot_discord.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable bot_discord
+#   sudo systemctl start bot_discord
+#
+# Logs:
+#   sudo journalctl -u bot_discord -f
+
+[Unit]
+Description=Bot Avisos Discord + Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/bot_discord
+ExecStart=/home/ubuntu/bot_discord/venv/bin/python main.py
+
+# Restart automático em caso de falha
+Restart=always
+RestartSec=10
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+# Variáveis de ambiente — alternativa ao .env
+# EnvironmentFile=/home/ubuntu/bot_discord/.env
+
+# Limites de recursos
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=bot_discord
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bot Avisos — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0e0f11;--bg2:#161719;--bg3:#1e2023;--b:#2a2c30;--b2:#3a3d42;--t:#e8eaed;--t2:#9aa0aa;--t3:#5c6270;--ac:#5865f2;--ac2:#4752c4;--rd:#f04747;--sans:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace}
+[data-theme="light"]{--bg:#f4f5f7;--bg2:#fff;--bg3:#f0f1f3;--b:#e0e2e7;--b2:#c8cad1;--t:#1a1c20;--t2:#5a5f6e;--t3:#9aa0b0}
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans);font-size:14px}
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:36px 32px;width:100%;max-width:380px}
+.logo{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--t);margin-bottom:4px}
+.sub{font-size:11px;color:var(--t3);font-family:var(--mono);margin-bottom:28px}
+.label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;letter-spacing:.02em}
+.input{width:100%;padding:10px 13px;background:var(--bg3);border:1px solid var(--b);border-radius:6px;color:var(--t);font-size:14px;font-family:var(--sans);outline:none;transition:.15s;margin-bottom:14px;-webkit-appearance:none}
+.input:focus{border-color:var(--ac);background:var(--bg2)}
+.btn{width:100%;padding:11px;background:var(--ac);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:.15s;margin-top:4px}
+.btn:hover{background:var(--ac2)}
+.btn:active{transform:scale(.98)}
+.err{background:rgba(240,71,71,.1);border:1px solid rgba(240,71,71,.3);color:var(--rd);border-radius:6px;padding:9px 13px;font-size:12px;margin-bottom:14px}
+.brand{text-align:center;margin-top:24px;font-size:10px;color:var(--t3);font-family:var(--mono)}
+.brand span{color:var(--rd)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="logo">BOT AVISOS</div>
+    <div class="sub">suporte teknisa retail</div>
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    <form method="POST" action="/login">
+      <label class="label" for="username">Usuário</label>
+      <input class="input" type="text" id="username" name="username" autocomplete="username" required autofocus>
+      <label class="label" for="password">Senha</label>
+      <input class="input" type="password" id="password" name="password" autocomplete="current-password" required>
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+    <div class="brand">feito com <span>♥</span> suporte teknisa retail</div>
+  </div>
+</div>
+<script>
+const t=localStorage.getItem('theme')||'dark';
+document.documentElement.dataset.theme=t;
+</script>
+</body>
+</html>

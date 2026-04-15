@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f11" id="theme-meta">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bot Avisos">
+<meta name="application-name" content="Bot Avisos">
+<meta name="description" content="Painel de controle — Bot Avisos Suporte Teknisa Retail">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Bot Avisos — Suporte Teknisa Retail</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Tokens light/dark ── */
+[data-theme="dark"]{
+  --bg:#0e0f11;--bg2:#161719;--bg3:#1e2023;--bg4:#252729;
+  --b:#2a2c30;--b2:#3a3d42;
+  --t:#e8eaed;--t2:#9aa0aa;--t3:#5c6270;
+  --shadow:rgba(0,0,0,.4);
+  --modal-bg:rgba(0,0,0,.72);
+}
+[data-theme="light"]{
+  --bg:#f4f5f7;--bg2:#ffffff;--bg3:#f0f1f3;--bg4:#e8e9ec;
+  --b:#e0e2e7;--b2:#c8cad1;
+  --t:#1a1c20;--t2:#5a5f6e;--t3:#9aa0b0;
+  --shadow:rgba(0,0,0,.08);
+  --modal-bg:rgba(0,0,0,.45);
+}
+:root{
+  --ac:#5865f2;--ac2:#4752c4;
+  --gr:#16a34a;--gr-bg:rgba(22,163,74,.1);
+  --rd:#dc2626;--rd-bg:rgba(220,38,38,.1);
+  --am:#d97706;--am-bg:rgba(217,119,6,.1);
+  --pu:#7c3aed;--pu-bg:rgba(124,58,237,.1);
+  --mono:'JetBrains Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+  --r:6px;--r2:10px;--r3:14px;
+}
+[data-theme="light"] .bg-gr{color:#15803d!important}
+[data-theme="light"] .bg-rd{color:#b91c1c!important}
+[data-theme="light"] .bg-am{color:#b45309!important}
+[data-theme="light"] .bg-pu{color:#6d28d9!important}
+[data-theme="light"] .bg-ac{color:#4338ca!important}
+
+html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans);font-size:13px;line-height:1.5;transition:background .2s,color .2s}
+
+/* ── Layout shell ── */
+.shell{display:flex;height:100dvh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:210px;flex-shrink:0;background:var(--bg2);
+  border-right:1px solid var(--b);display:flex;flex-direction:column;
+  transition:transform .25s cubic-bezier(.4,0,.2,1),width .25s;
+  z-index:50;
+}
+.logo{padding:18px 18px 14px;border-bottom:1px solid var(--b)}
+.logo-t{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.06em;color:var(--t)}
+.logo-s{font-size:10px;color:var(--t3);font-family:var(--mono);margin-top:2px}
+.nav{padding:8px 6px;flex:1;overflow-y:auto}
+.ni{
+  display:flex;align-items:center;gap:9px;padding:9px 11px;
+  border-radius:var(--r);cursor:pointer;color:var(--t2);font-size:13px;
+  width:100%;text-align:left;border:none;background:none;
+  transition:.13s;font-family:var(--sans);
+}
+.ni:hover{background:var(--bg3);color:var(--t)}
+.ni.on{background:rgba(88,101,242,.15);color:var(--ac);font-weight:500}
+.ni svg{flex-shrink:0;opacity:.7}
+.ni.on svg{opacity:1}
+.sf{
+  padding:12px 16px;border-top:1px solid var(--b);
+  font-size:10px;color:var(--t3);font-family:var(--mono);
+  display:flex;flex-direction:column;gap:6px;
+}
+.sf-brand{font-size:9px;color:var(--t3);line-height:1.4;font-family:var(--mono)}
+.sf-brand span{color:var(--rd);font-size:11px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gr);box-shadow:0 0 5px var(--gr);margin-right:5px;vertical-align:middle}
+
+/* ── Overlay sidebar mobile ── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:var(--modal-bg);z-index:40}
+
+/* ── Topbar ── */
+.topbar{
+  height:52px;flex-shrink:0;border-bottom:1px solid var(--b);
+  display:flex;align-items:center;padding:0 16px;gap:10px;
+  background:var(--bg2);position:sticky;top:0;z-index:10;
+}
+.menu-btn{
+  display:none;background:none;border:none;cursor:pointer;
+  color:var(--t2);padding:4px;border-radius:var(--r);
+}
+.menu-btn:hover{background:var(--bg3);color:var(--t)}
+.pt{font-size:14px;font-weight:600;flex:1;color:var(--t)}
+.content{padding:16px 16px 80px;flex:1}
+
+/* ── Botões ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:var(--r);font-size:12px;
+  font-weight:500;cursor:pointer;border:none;
+  font-family:var(--sans);transition:.13s;white-space:nowrap;
+}
+.btn:active{transform:scale(.97)}
+.bp{background:var(--ac);color:#fff}.bp:hover{background:var(--ac2)}
+.bg-b{background:var(--bg3);color:var(--t2);border:1px solid var(--b)}.bg-b:hover{color:var(--t);border-color:var(--b2)}
+.bd{background:var(--rd-bg);color:var(--rd);border:1px solid rgba(220,38,38,.25)}.bd:hover{opacity:.85}
+.sm{padding:4px 10px;font-size:11px}
+
+/* ── Cards / listas ── */
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:var(--r2)}
+.li{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 16px;border-bottom:1px solid var(--b);transition:.1s;
+}
+.li:last-child{border-bottom:none}
+.li:hover{background:var(--bg3)}
+.ico{width:34px;height:34px;border-radius:var(--r);background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ib{flex:1;min-width:0}
+.in{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.im{font-size:11px;color:var(--t3);margin-top:3px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ia{display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;font-family:var(--mono);white-space:nowrap}
+.bg-gr{background:var(--gr-bg);color:var(--gr)}
+.bg-rd{background:var(--rd-bg);color:var(--rd)}
+.bg-am{background:var(--am-bg);color:var(--am)}
+.bg-ac{background:rgba(88,101,242,.12);color:#818cf8}
+.bg-pu{background:var(--pu-bg);color:var(--pu)}
+.bg-gy{background:var(--bg3);color:var(--t3)}
+
+/* ── Toggle ── */
+.tog{position:relative;width:32px;height:18px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tok{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--b2);border-radius:20px;cursor:pointer;transition:.2s}
+.tog input:checked+.tok{background:var(--ac);border-color:var(--ac)}
+.toh{position:absolute;top:2px;left:2px;width:12px;height:12px;background:var(--t3);border-radius:50%;transition:.2s;pointer-events:none}
+.tog input:checked~.toh{transform:translateX(14px);background:#fff}
+
+/* ── Modal ── */
+.ov{
+  position:fixed;inset:0;background:var(--modal-bg);
+  z-index:100;display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.ov.open{opacity:1;pointer-events:all}
+.modal{
+  background:var(--bg2);border:1px solid var(--b2);
+  border-radius:var(--r3) var(--r3) 0 0;
+  width:100%;max-width:600px;max-height:92dvh;
+  overflow-y:auto;transform:translateY(20px);transition:transform .2s;
+}
+.ov.open .modal{transform:none}
+.mh{padding:18px 20px 14px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--bg2);z-index:2}
+.mt{font-size:14px;font-weight:600;flex:1;color:var(--t)}
+.mb{padding:16px 20px}
+.mf{padding:12px 20px;border-top:1px solid var(--b);display:flex;gap:8px;justify-content:flex-end;align-items:center;position:sticky;bottom:0;background:var(--bg2)}
+
+/* ── Formulário ── */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;letter-spacing:.02em}
+.fi,.fs,.fta{
+  width:100%;padding:9px 12px;background:var(--bg3);
+  border:1px solid var(--b);border-radius:var(--r);
+  color:var(--t);font-size:13px;font-family:var(--sans);
+  outline:none;transition:.13s;-webkit-appearance:none;
+}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--ac);background:var(--bg2)}
+.fta{resize:vertical;min-height:72px}
+.fs option{background:var(--bg3)}
+.fh{font-size:10px;color:var(--t3);margin-top:4px;font-family:var(--mono);line-height:1.4}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sched{background:var(--bg);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-top:2px}
+[data-theme="light"] .sched{background:var(--bg3)}
+
+/* ── Pill checkboxes ── */
+.pill-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.pill-cb{display:none}
+.pill-lbl{
+  padding:5px 11px;border-radius:20px;background:var(--bg3);
+  border:1px solid var(--b);font-size:11px;color:var(--t2);
+  cursor:pointer;transition:.13s;user-select:none;font-family:var(--mono);
+}
+.pill-lbl:hover{border-color:var(--b2);color:var(--t)}
+.pill-cb:checked+.pill-lbl{background:rgba(88,101,242,.15);border-color:var(--ac);color:var(--ac)}
+
+/* ── Seletor de canais ── */
+.ch-search{
+  width:100%;padding:8px 12px;background:var(--bg3);
+  border:1px solid var(--b);border-radius:var(--r);
+  color:var(--t);font-size:12px;outline:none;margin-bottom:6px;
+  font-family:var(--sans);transition:.13s;
+}
+.ch-search:focus{border-color:var(--ac)}
+.ch-list{max-height:160px;overflow-y:auto;border:1px solid var(--b);border-radius:var(--r);background:var(--bg3)}
+.ch-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:.1s;border-bottom:1px solid var(--b)}
+.ch-item:last-child{border-bottom:none}
+.ch-item:hover{background:var(--bg4)}
+.ch-item.sel{background:rgba(88,101,242,.08)}
+.ch-chk{width:15px;height:15px;border:1px solid var(--b2);border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.13s}
+.ch-item.sel .ch-chk{background:var(--ac);border-color:var(--ac)}
+.ch-name{font-size:12px;flex:1;color:var(--t)}
+.ch-guild{font-size:10px;color:var(--t3);font-family:var(--mono)}
+.ch-info{font-size:10px;color:var(--t3);margin-top:4px;font-family:var(--mono)}
+
+/* ── Mensagens no grupo ── */
+.msg-list{display:flex;flex-direction:column;gap:5px;margin-top:6px}
+.msg-row{display:flex;align-items:flex-start;gap:8px;background:var(--bg3);border:1px solid var(--b);border-radius:var(--r);padding:10px 12px}
+.msg-txt{flex:1;font-size:12px;line-height:1.5;word-break:break-word;color:var(--t)}
+.msg-txt.off{opacity:.35;text-decoration:line-through}
+.msg-actions{display:flex;gap:4px;flex-shrink:0;margin-top:1px}
+
+/* ── Instalar PWA banner ── */
+#pwa-banner{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg2);border-top:1px solid var(--b);
+  padding:14px 16px;z-index:200;
+  flex-direction:column;gap:10px;
+  box-shadow:0 -4px 20px var(--shadow);
+}
+#pwa-banner.show{display:flex}
+.pwa-row{display:flex;align-items:center;gap:12px}
+.pwa-icon{width:40px;height:40px;border-radius:10px;background:var(--ac);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;flex-shrink:0}
+.pwa-text{flex:1}
+.pwa-text strong{font-size:13px;color:var(--t);display:block}
+.pwa-text span{font-size:11px;color:var(--t3)}
+.pwa-btns{display:flex;gap:8px}
+
+/* ── Toast ── */
+#toast-area{position:fixed;bottom:20px;right:16px;z-index:300;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{padding:10px 16px;border-radius:var(--r);font-size:12px;font-weight:500;animation:su .2s ease;pointer-events:all;max-width:320px}
+.tok{background:var(--bg2);border:1px solid var(--gr);color:var(--gr)}
+.ter{background:var(--bg2);border:1px solid var(--rd);color:var(--rd)}
+@keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:48px 24px;color:var(--t3);font-size:12px}
+.empty-ico{font-size:32px;margin-bottom:10px}
+
+/* ── Panel ── */
+.panel{display:none}.panel.on{display:block}
+
+/* ── Theme toggle button ── */
+.theme-btn{
+  background:none;border:1px solid var(--b);border-radius:var(--r);
+  cursor:pointer;color:var(--t2);padding:5px 8px;font-size:14px;
+  transition:.13s;line-height:1;
+}
+.theme-btn:hover{background:var(--bg3);color:var(--t)}
+
+/* ── Responsivo ── */
+@media(min-width:768px){
+  .ov{align-items:center}
+  .modal{border-radius:var(--r3);max-height:88dvh}
+  .content{padding:22px 22px 60px}
+  .menu-btn{display:none!important}
+  .topbar{padding:0 22px}
+}
+
+@media(max-width:767px){
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;
+    transform:translateX(-100%);
+    box-shadow:4px 0 24px var(--shadow);
+  }
+  .sidebar.open{transform:none}
+  .sidebar-overlay.show{display:block}
+  .menu-btn{display:flex!important;align-items:center;justify-content:center}
+  .fr{grid-template-columns:1fr}
+  .ia{gap:4px}
+  .ia .badge{display:none}
+  .im{max-width:180px}
+  .in{font-size:12px}
+  #toast-area{bottom:80px;left:16px;right:16px}
+  .toast{max-width:100%}
+}
+
+@media(max-width:400px){
+  .li{padding:10px 12px;gap:8px}
+  .ico{width:28px;height:28px;font-size:13px}
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+/* ── Misc ── */
+.hidden{display:none!important}
+.reload-ico{font-size:12px}
+
+/* ── Monitor ── */
+.card-hd{padding:14px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:8px}
+.card-ht{font-size:13px;font-weight:600;flex:1;color:var(--t)}
+.monitor-grid{grid-template-columns:1fr 1fr}
+@media(max-width:767px){.monitor-grid{grid-template-columns:1fr}}
+.up-item{padding:11px 16px;border-bottom:1px solid var(--b);display:flex;flex-direction:column;gap:3px}
+.up-item:last-child{border-bottom:none}
+.up-name{font-size:13px;font-weight:500;color:var(--t)}
+.up-next{font-size:11px;color:var(--t3);font-family:var(--mono)}
+.sent-item{padding:9px 16px;border-bottom:1px solid var(--b);font-size:11px;font-family:var(--mono);color:var(--t3)}
+.sent-item:last-child{border-bottom:none}
+.sent-item b{color:var(--t2);font-weight:500}
+
+/* ── Log viewer ── */
+.log-line{display:block;padding:1px 0;white-space:pre-wrap;word-break:break-all}
+.log-info{color:var(--t3)}
+.log-warn{color:var(--am)}
+.log-error{color:var(--rd)}
+.log-ok{color:var(--gr)}
+.log-test{color:var(--pu)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- Overlay mobile -->
+  <div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="logo">
+      <div class="logo-t">BOT AVISOS</div>
+      <div class="logo-s">painel de controle</div>
+    </div>
+    <nav class="nav">
+      <button class="ni on" onclick="showV('tasks',this)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10l2 2 4-4"/></svg>
+        Tasks
+      </button>
+      <button class="ni" onclick="showV('groups',this)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h14M3 10h14M3 14h8"/></svg>
+        Grupos de Mensagens
+      </button>
+      <button class="ni" onclick="showV('monitor',this)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><polyline points="10,6 10,10 13,13"/></svg>
+        Monitor
+      </button>
+      <button class="ni" onclick="showV('logs',this)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/><line x1="7" y1="13" x2="10" y2="13"/></svg>
+        Logs
+      </button>
+    </nav>
+    <div class="sf">
+      <div><span class="dot"></span><span>dashboard online</span></div>
+      <div class="sf-brand">feito com <span>♥</span> suporte teknisa retail</div>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+    <div class="topbar">
+      <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14" x2="17" y2="14"/></svg>
+      </button>
+      <span class="pt" id="pt">Tasks Agendadas</span>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar tema">🌙</button>
+      <button class="btn bg-b sm" onclick="reloadChannels()" title="Recarregar canais">
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a6 6 0 1 1 1.5 4"/><path d="M4 14v-4H8"/></svg>
+        <span class="reload-ico" id="ch-count">Canais</span>
+      </button>
+      <button class="btn bp" onclick="openNew()">
+        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+        Novo
+      </button>
+    </div>
+
+    <div class="content">
+      <div class="panel on" id="v-tasks">
+        <div class="card" id="tasks-list"><div class="empty"><div class="empty-ico">⏳</div>Carregando...</div></div>
+      </div>
+      <div class="panel" id="v-groups">
+        <div class="card" id="groups-list"><div class="empty"><div class="empty-ico">⏳</div>Carregando...</div></div>
+      </div>
+
+      <!-- MONITOR -->
+      <div class="panel" id="v-monitor">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="monitor-grid">
+          <!-- Próximas execuções -->
+          <div class="card">
+            <div class="card-hd">
+              <span class="card-ht">Próximas execuções</span>
+              <button class="btn bg-b sm" onclick="loadMonitor()">↻</button>
+            </div>
+            <div id="upcoming-list"><div class="empty"><div class="empty-ico">⏳</div>Carregando...</div></div>
+          </div>
+          <!-- Últimas mensagens enviadas -->
+          <div class="card">
+            <div class="card-hd">
+              <span class="card-ht">Últimas mensagens enviadas</span>
+              <button class="btn bg-b sm" onclick="loadMonitor()">↻</button>
+            </div>
+            <div id="sent-list"><div class="empty"><div class="empty-ico">⏳</div>Carregando...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="panel" id="v-logs">
+        <div class="card">
+          <div class="card-hd">
+            <span class="card-ht">tasks.log</span>
+            <div style="display:flex;gap:6px;align-items:center">
+              <select class="fs" id="log-lines" style="width:100px;padding:4px 8px;font-size:11px" onchange="loadLogs()">
+                <option value="50">50 linhas</option>
+                <option value="100" selected>100 linhas</option>
+                <option value="200">200 linhas</option>
+                <option value="500">500 linhas</option>
+              </select>
+              <button class="btn bg-b sm" onclick="loadLogs()">↻ Atualizar</button>
+              <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);cursor:pointer">
+                <input type="checkbox" id="log-autoreload" onchange="toggleAutoReload()"> Auto
+              </label>
+            </div>
+          </div>
+          <div id="log-container" style="background:var(--bg);border-radius:0 0 var(--r2) var(--r2);padding:12px 14px;max-height:520px;overflow-y:auto;font-family:var(--mono);font-size:11px;line-height:1.7">
+            <div class="empty"><div class="empty-ico">📋</div>Carregando logs...</div>
+          </div>
+          <div style="padding:8px 14px;border-top:1px solid var(--b);font-size:10px;color:var(--t3);font-family:var(--mono)" id="log-info"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Task ── -->
+<div class="ov" id="modal-task" onclick="closeBg(event,'modal-task')">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt-title">
+  <div class="mh">
+    <span class="mt" id="mt-title">Nova Task</span>
+    <button class="btn bg-b sm" onclick="closeModal('modal-task')" aria-label="Fechar">✕</button>
+  </div>
+  <div class="mb">
+    <input type="hidden" id="t-id">
+    <div class="fr">
+      <div class="fg">
+        <label class="fl" for="t-name">Nome *</label>
+        <input class="fi" id="t-name" placeholder="ex: Aviso semanal suporte" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label class="fl" for="t-type">Tipo de recorrência *</label>
+        <select class="fs" id="t-type" onchange="renderSched()">
+          <option value="weekly">Semanal</option>
+          <option value="monthly">Mensal</option>
+          <option value="fixed_times">Dias + horários fixos</option>
+          <option value="interval_days">A cada N dias</option>
+          <option value="test">Modo teste</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl" for="t-desc">Descrição</label>
+      <input class="fi" id="t-desc" placeholder="Opcional" autocomplete="off">
+    </div>
+
+    <!-- Canais -->
+    <div class="fg">
+      <label class="fl" style="display:flex;align-items:center;gap:8px">
+        Canais do Discord *
+        <button type="button" class="btn bg-b sm" onclick="reloadChannels(true)" style="padding:2px 7px;font-size:10px">↻ atualizar</button>
+      </label>
+      <input class="ch-search" id="ch-search" placeholder="Buscar canal..." oninput="filterChannels()" autocomplete="off" aria-label="Buscar canal">
+      <div class="ch-list" id="ch-list" role="listbox" aria-multiselectable="true"></div>
+      <div class="ch-info" id="ch-sel-info">Nenhum canal selecionado</div>
+    </div>
+
+    <div class="fg">
+      <label class="fl" for="t-group">Grupo de mensagens</label>
+      <select class="fs" id="t-group"><option value="">— nenhum —</option></select>
+    </div>
+
+    <!-- Modo teste -->
+    <div class="fg" style="display:flex;align-items:center;gap:12px;background:var(--am-bg);border:1px solid rgba(217,119,6,.25);border-radius:var(--r);padding:11px 13px">
+      <label class="tog">
+        <input type="checkbox" id="t-testmode" onchange="renderSched()">
+        <div class="tok"></div><div class="toh"></div>
+      </label>
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--am)">🧪 Modo teste</div>
+        <div style="font-size:10px;color:var(--t3)">Ignora agendamento — envia a cada N minutos</div>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-top:14px">
+      <label class="fl">Configuração de agendamento</label>
+      <div class="sched" id="sched-fields"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bd sm hidden" id="btn-del-task" onclick="delTask()">Excluir</button>
+    <span style="flex:1"></span>
+    <button class="btn bg-b" onclick="closeModal('modal-task')">Cancelar</button>
+    <button class="btn bp" onclick="saveTask()">Salvar</button>
+  </div>
+</div>
+</div>
+
+<!-- ── Modal Grupo ── -->
+<div class="ov" id="modal-group" onclick="closeBg(event,'modal-group')">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mg-title">
+  <div class="mh">
+    <span class="mt" id="mg-title">Novo Grupo</span>
+    <button class="btn bg-b sm" onclick="closeModal('modal-group')" aria-label="Fechar">✕</button>
+  </div>
+  <div class="mb">
+    <input type="hidden" id="g-id">
+    <div class="fg">
+      <label class="fl" for="g-name">Nome *</label>
+      <input class="fi" id="g-name" placeholder="ex: Avisos de Ponto" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="fl" for="g-desc">Descrição</label>
+      <input class="fi" id="g-desc" placeholder="Opcional" autocomplete="off">
+    </div>
+    <div class="fg">
+      <label class="fl">Mensagens</label>
+      <div class="msg-list" id="msg-edit"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <textarea class="fta" id="new-msg" placeholder="Digite a mensagem..." style="min-height:54px;flex:1" aria-label="Nova mensagem"></textarea>
+        <button class="btn bg-b" style="align-self:flex-end;flex-shrink:0" onclick="addMsg()">+ Add</button>
+      </div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bd sm hidden" id="btn-del-group" onclick="delGroup()">Excluir</button>
+    <span style="flex:1"></span>
+    <button class="btn bg-b" onclick="closeModal('modal-group')">Cancelar</button>
+    <button class="btn bp" onclick="saveGroup()">Salvar</button>
+  </div>
+</div>
+</div>
+
+<!-- ── Banner PWA ── -->
+<div id="pwa-banner" role="complementary" aria-label="Instalar aplicativo">
+  <div class="pwa-row">
+    <div class="pwa-icon">📋</div>
+    <div class="pwa-text">
+      <strong>Instalar Bot Avisos</strong>
+      <span>Adicione à tela inicial para acesso rápido</span>
+    </div>
+  </div>
+  <div class="pwa-btns">
+    <button class="btn bp" style="flex:1" onclick="installPWA()">Instalar app</button>
+    <button class="btn bg-b" onclick="dismissPWA()">Agora não</button>
+  </div>
+</div>
+
+<div id="toast-area" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+// ── Estado global ─────────────────────────────────────────────────────────
+let tasks=[], groups=[], channels=[], selChannels=new Set(), editMsgs=[];
+let curView='tasks';
+let deferredPrompt=null;
+let _saving=false; // lock anti-double-submit
+
+const WEEKDAYS=[['Seg',0],['Ter',1],['Qua',2],['Qui',3],['Sex',4],['Sáb',5],['Dom',6]];
+const MONTHS=[['Jan',1],['Fev',2],['Mar',3],['Abr',4],['Mai',5],['Jun',6],['Jul',7],['Ago',8],['Set',9],['Out',10],['Nov',11],['Dez',12]];
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  initTheme();
+  initPWA();
+  loadAll();
+  reloadChannels();
+  renderSched();
+  // fechar modal com Escape
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      document.querySelectorAll('.ov.open').forEach(o=>o.classList.remove('open'));
+    }
+  });
+});
+
+// ── Tema ──────────────────────────────────────────────────────────────────
+function initTheme(){
+  const saved=localStorage.getItem('theme')||'dark';
+  applyTheme(saved);
+}
+function toggleTheme(){
+  const cur=document.documentElement.dataset.theme;
+  applyTheme(cur==='dark'?'light':'dark');
+}
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  localStorage.setItem('theme',t);
+  const btn=document.getElementById('theme-btn');
+  if(btn) btn.textContent=t==='dark'?'☀️':'🌙';
+  const meta=document.getElementById('theme-meta');
+  if(meta) meta.content=t==='dark'?'#0e0f11':'#f4f5f7';
+}
+
+// ── Sidebar mobile ────────────────────────────────────────────────────────
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sb-overlay');
+  const open=sb.classList.toggle('open');
+  ov.classList.toggle('show',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('show');
+  document.body.style.overflow='';
+}
+
+// ── PWA ───────────────────────────────────────────────────────────────────
+function initPWA(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  }
+  window.addEventListener('beforeinstallprompt',e=>{
+    e.preventDefault();
+    deferredPrompt=e;
+    const dismissed=localStorage.getItem('pwa-dismissed');
+    const installed=localStorage.getItem('pwa-installed');
+    if(!dismissed&&!installed) showPWABanner();
+  });
+  window.addEventListener('appinstalled',()=>{
+    localStorage.setItem('pwa-installed','1');
+    hidePWABanner();
+    toast('App instalado com sucesso!');
+  });
+  // iOS Safari (não dispara beforeinstallprompt)
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone=window.navigator.standalone;
+  if(isIOS&&!isStandalone&&!localStorage.getItem('pwa-dismissed-ios')){
+    setTimeout(showIOSHint,1500);
+  }
+}
+function showPWABanner(){document.getElementById('pwa-banner').classList.add('show')}
+function hidePWABanner(){document.getElementById('pwa-banner').classList.remove('show')}
+async function installPWA(){
+  if(!deferredPrompt){toast('Não foi possível instalar automaticamente — use o menu do navegador.',false);return;}
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted') localStorage.setItem('pwa-installed','1');
+  deferredPrompt=null;
+  hidePWABanner();
+}
+function dismissPWA(){
+  localStorage.setItem('pwa-dismissed','1');
+  hidePWABanner();
+}
+function showIOSHint(){
+  if(localStorage.getItem('pwa-dismissed-ios')) return;
+  toast('📲 Para instalar: toque em Compartilhar → "Adicionar à Tela de Início"');
+  localStorage.setItem('pwa-dismissed-ios','1');
+}
+
+// ── Views ─────────────────────────────────────────────────────────────────
+function showV(v,el){
+  curView=v;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('pt').textContent={tasks:'Tasks Agendadas',groups:'Grupos de Mensagens'}[v];
+  closeSidebar();
+}
+function openNew(){curView==='tasks'?openTaskModal():openGroupModal();}
+
+// ── API com retry e tratamento de erro ───────────────────────────────────
+async function api(method,path,body,retries=1){
+  for(let i=0;i<=retries;i++){
+    try{
+      const r=await fetch('/api'+path,{
+        method,
+        headers:{'Content-Type':'application/json'},
+        body:body?JSON.stringify(body):undefined,
+      });
+      if(!r.ok){
+        const e=await r.json().catch(()=>({error:r.statusText}));
+        throw new Error(e.error||'Erro '+r.status);
+      }
+      return await r.json();
+    }catch(e){
+      if(i===retries) throw e;
+      await new Promise(r=>setTimeout(r,600));
+    }
+  }
+}
+
+function toast(msg,ok=true,dur=3500){
+  const el=document.createElement('div');
+  el.className='toast '+(ok?'tok':'ter');
+  el.textContent=msg;
+  el.setAttribute('role','alert');
+  document.getElementById('toast-area').appendChild(el);
+  setTimeout(()=>el.remove(),dur);
+}
+
+// ── Canais ────────────────────────────────────────────────────────────────
+async function reloadChannels(silent=false){
+  try{
+    channels=await api('GET','/channels');
+    document.getElementById('ch-count').textContent=channels.length?channels.length+' canais':'Canais';
+    renderChannelList();
+    if(!silent) toast('Canais: '+channels.length+' carregados');
+  }catch(e){if(!silent)toast('Erro ao carregar canais',false);}
+}
+function renderChannelList(){
+  const q=(document.getElementById('ch-search')?.value||'').toLowerCase();
+  const vis=channels.filter(c=>!q||c.name.toLowerCase().includes(q)||c.guild.toLowerCase().includes(q));
+  const el=document.getElementById('ch-list');
+  if(!el) return;
+  if(!channels.length){
+    el.innerHTML='<div style="padding:12px;text-align:center;color:var(--t3);font-size:11px">Bot ainda não conectado — clique em ↻ após iniciar</div>';
+    return;
+  }
+  if(!vis.length){
+    el.innerHTML='<div style="padding:10px;text-align:center;color:var(--t3);font-size:11px">Nenhum canal encontrado</div>';
+    return;
+  }
+  el.innerHTML=vis.map(c=>{
+    const s=selChannels.has(c.id);
+    return`<div class="ch-item${s?' sel':''}" onclick="toggleCh('${c.id}')" role="option" aria-selected="${s}">
+      <div class="ch-chk">${s?`<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2.5"><path d="M1 5l3 3 5-5"/></svg>`:''}</div>
+      <span class="ch-name">#${esc(c.name)}</span>
+      <span class="ch-guild">${esc(c.guild)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('ch-sel-info').textContent=
+    selChannels.size?selChannels.size+' canal(is) selecionado(s)':'Nenhum canal selecionado';
+}
+function toggleCh(id){
+  selChannels.has(id)?selChannels.delete(id):selChannels.add(id);
+  renderChannelList();
+}
+function filterChannels(){renderChannelList();}
+function setSelChannels(ids){
+  selChannels.clear();
+  ids.forEach(id=>selChannels.add(String(id).trim()));
+  renderChannelList();
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────────────
+async function loadAll(){
+  try{await Promise.all([loadTasks(),loadGroups()]);}
+  catch(e){toast('Erro ao carregar dados',false);}
+}
+async function loadTasks(){
+  try{tasks=await api('GET','/tasks');renderTasks();}
+  catch(e){
+    document.getElementById('tasks-list').innerHTML='<div class="empty"><div class="empty-ico">⚠️</div>Erro ao carregar tasks. Verifique se o servidor está rodando.</div>';
+    throw e;
+  }
+}
+const typeLabel={weekly:'semanal',monthly:'mensal',fixed_times:'horário fixo',interval_days:'N dias',test:'teste'};
+const typeBadge={weekly:'bg-ac',monthly:'bg-am',fixed_times:'bg-gr',interval_days:'bg-pu',test:'bg-am'};
+
+function renderTasks(){
+  const el=document.getElementById('tasks-list');
+  if(!tasks.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">📋</div>Nenhuma task. Clique em <b>Novo</b> para criar.</div>';
+    return;
+  }
+  el.innerHTML=tasks.map(t=>{
+    const g=groups.find(x=>x.id===t.message_group_id)?.name||'—';
+    const s=t.schedule_config||{};
+    let detail='';
+    if(t.test_mode) detail=`a cada ${s.every_minutes||2}min`;
+    else if(t.type==='fixed_times') detail=(s.times||[]).join(', ');
+    else if(t.type==='interval_days') detail=`a cada ${s.every_days||'?'}d`;
+    else if(t.type==='weekly') detail=(s.days_of_week||[]).length+'d/sem';
+    else if(t.type==='monthly'){const ms=s.months;detail=ms&&ms.length&&ms.length<12?ms.join(','):' todo mês';}
+    const nch=t.channel_ids?t.channel_ids.split(',').filter(Boolean).length:0;
+    return`<div class="li">
+      <div class="ico">📅</div>
+      <div class="ib">
+        <div class="in">
+          ${esc(t.name)}
+          ${t.test_mode?'<span class="badge bg-am">🧪 teste</span>':''}
+          ${!t.active?'<span class="badge bg-gy">pausado</span>':''}
+        </div>
+        <div class="im">
+          <span class="badge ${typeBadge[t.type]||'bg-gy'}">${typeLabel[t.type]||t.type}</span>
+          ${detail} · ${esc(g)} · ${nch} canal(is)
+        </div>
+      </div>
+      <div class="ia">
+        <label class="tog" title="${t.active?'Pausar':'Ativar'}" aria-label="${t.active?'Pausar':'Ativar'} task">
+          <input type="checkbox" ${t.active?'checked':''} onchange="toggleTask(${t.id},this)">
+          <div class="tok"></div><div class="toh"></div>
+        </label>
+        <button class="btn bg-b sm" onclick="openTaskModal(${t.id})">Editar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleTask(id,cb){
+  try{
+    const r=await api('POST',`/tasks/${id}/toggle`);
+    const t=tasks.find(x=>x.id===id);
+    if(t) t.active=r.active;
+    renderTasks();
+    toast(r.active?'Task ativada':'Task pausada');
+  }catch(e){toast('Erro: '+e.message,false);cb.checked=!cb.checked;}
+}
+
+function openTaskModal(id){
+  const isEdit=!!id;
+  document.getElementById('mt-title').textContent=isEdit?'Editar Task':'Nova Task';
+  document.getElementById('btn-del-task').classList.toggle('hidden',!isEdit);
+  const t=isEdit?tasks.find(x=>x.id===id):null;
+  document.getElementById('t-id').value=t?.id||'';
+  document.getElementById('t-name').value=t?.name||'';
+  document.getElementById('t-desc').value=t?.description||'';
+  document.getElementById('t-type').value=t?.type||'weekly';
+  document.getElementById('t-testmode').checked=!!t?.test_mode;
+  document.getElementById('ch-search').value='';
+  setSelChannels(t?.channel_ids?t.channel_ids.split(','):[] );
+  const sel=document.getElementById('t-group');
+  sel.innerHTML='<option value="">— nenhum —</option>'+
+    groups.map(g=>`<option value="${g.id}"${t?.message_group_id===g.id?' selected':''}>${esc(g.name)}</option>`).join('');
+  renderSched(t?.schedule_config);
+  openModal('modal-task');
+}
+
+// ── Schedule fields ───────────────────────────────────────────────────────
+function renderSched(v){
+  v=v||{};
+  const type=document.getElementById('t-type').value;
+  const testMode=document.getElementById('t-testmode')?.checked;
+  const el=document.getElementById('sched-fields');
+  if(!el) return;
+
+  const mkPills=(arr,group,selected=[])=>arr.map(([l,n])=>
+    `<input type="checkbox" class="pill-cb" id="${group}${n}" data-group="${group}" value="${n}" ${selected.includes(n)?'checked':''}>
+     <label class="pill-lbl" for="${group}${n}">${l}</label>`).join('');
+
+  if(testMode){
+    el.innerHTML=`<div class="fg" style="margin:0">
+      <label class="fl">Enviar a cada (minutos)</label>
+      <input class="fi" data-s="every_minutes" type="number" min="1" max="60" value="${v.every_minutes||2}" style="width:120px">
+      <div class="fh">Recomendado: 2 min para testes</div></div>`;
+    return;
+  }
+
+  const tpls={
+    weekly:`
+      <div class="fg"><label class="fl">Dias da semana</label>
+        <div class="pill-grid">${mkPills(WEEKDAYS,'wd',v.days_of_week??[0,1,2,3,4])}</div></div>
+      <div class="fr"><div class="fg"><label class="fl">Hora início</label>
+        <input class="fi" data-s="hour_start" type="number" min="0" max="23" value="${v.hour_start??9}"></div>
+        <div class="fg"><label class="fl">Hora fim</label>
+        <input class="fi" data-s="hour_end" type="number" min="0" max="23" value="${v.hour_end??18}"></div></div>
+      <div class="fh">Uma mensagem por semana dentro da janela</div>`,
+
+    monthly:`
+      <div class="fg"><label class="fl">Meses (vazio = todos)</label>
+        <div class="pill-grid">${mkPills(MONTHS,'mo',v.months||[])}</div></div>
+      <div class="fr"><div class="fg"><label class="fl">Hora início</label>
+        <input class="fi" data-s="hour_start" type="number" min="0" max="23" value="${v.hour_start??9}"></div>
+        <div class="fg"><label class="fl">Hora fim</label>
+        <input class="fi" data-s="hour_end" type="number" min="0" max="23" value="${v.hour_end??18}"></div></div>
+      <div class="fh">Uma mensagem por mês (ex: só Jan/Abr/Jul/Out = trimestral)</div>`,
+
+    fixed_times:`
+      <div class="fg"><label class="fl">Horários (HH:MM)</label>
+        <input class="fi" data-s="times_raw" value="${(v.times||['09:00']).join(', ')}" placeholder="09:00, 18:00">
+        <div class="fh">Separados por vírgula</div></div>
+      <div class="fg"><label class="fl">Dias do mês (vazio = todos)</label>
+        <div class="pill-grid">${Array.from({length:31},(_,i)=>i+1).map(n=>
+          `<input type="checkbox" class="pill-cb" id="dom${n}" data-group="days_of_month" value="${n}" ${(v.days_of_month||[]).includes(n)?'checked':''}><label class="pill-lbl" for="dom${n}">${n}</label>`).join('')}</div></div>
+      <div class="fg"><label class="fl">Dias da semana (vazio = todos)</label>
+        <div class="pill-grid">${mkPills(WEEKDAYS,'wdf',v.days_of_week||[])}</div></div>
+      <div class="fg" style="margin-bottom:0"><label class="fl">Meses (vazio = todos)</label>
+        <div class="pill-grid">${mkPills(MONTHS,'mof',v.months||[])}</div></div>`,
+
+    interval_days:`
+      <div class="fr"><div class="fg"><label class="fl">A cada (dias)</label>
+        <input class="fi" data-s="every_days" type="number" min="1" value="${v.every_days||10}">
+        <div class="fh">ex: 15 = quinzenal</div></div>
+        <div class="fg"><label class="fl">A partir de (data)</label>
+        <input class="fi" data-s="start_from" type="date" value="${v.start_from||''}">
+        <div class="fh">Vazio = hoje</div></div></div>
+      <div class="fr"><div class="fg"><label class="fl">Hora início da janela</label>
+        <input class="fi" data-s="hour_start" type="number" min="0" max="23" value="${v.hour_start??9}"></div>
+        <div class="fg"><label class="fl">Hora fim da janela</label>
+        <input class="fi" data-s="hour_end" type="number" min="0" max="23" value="${v.hour_end??23}"></div></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <label class="tog"><input type="checkbox" data-s="random_time" ${v.random_time!==false?'checked':''}>
+          <div class="tok"></div><div class="toh"></div></label>
+        <span style="font-size:12px;color:var(--t2)">Horário aleatório dentro da janela</span></div>`,
+
+    test:`<div class="fg" style="margin:0"><label class="fl">Enviar a cada (minutos)</label>
+      <input class="fi" data-s="every_minutes" type="number" min="1" max="60" value="${v.every_minutes||2}" style="width:120px"></div>`,
+  };
+  el.innerHTML=tpls[type]||'';
+}
+
+function collectSched(){
+  const type=document.getElementById('t-type').value;
+  const testMode=document.getElementById('t-testmode').checked;
+  const cfg={};
+  document.querySelectorAll('[data-s]').forEach(inp=>{
+    const k=inp.dataset.s;
+    if(inp.type==='checkbox') cfg[k]=inp.checked;
+    else if(inp.type==='number') cfg[k]=Number(inp.value)||0;
+    else cfg[k]=inp.value;
+  });
+  ['days_of_week','months','days_of_month','wd','mo','wdf','mof'].forEach(g=>{
+    const vals=[...document.querySelectorAll(`[data-group="${g}"]:checked`)].map(x=>Number(x.value));
+    if(vals.length||['days_of_week','months','days_of_month'].includes(g)){
+      const key=g.replace(/f$/,'').replace(/^wd$/,'days_of_week').replace(/^mo$/,'months');
+      cfg[key]=vals;
+    }
+  });
+  if(cfg.times_raw!==undefined){
+    cfg.times=String(cfg.times_raw).split(',').map(x=>x.trim()).filter(Boolean);
+    delete cfg.times_raw;
+  }
+  if(testMode) return{every_minutes:cfg.every_minutes||2};
+  return cfg;
+}
+
+async function saveTask(){
+  if(_saving) return;
+  const id=document.getElementById('t-id').value;
+  if(!selChannels.size){toast('Selecione ao menos um canal',false);return;}
+  const name=document.getElementById('t-name').value.trim();
+  if(!name){toast('Nome é obrigatório',false);return;}
+  const body={
+    name,
+    description:document.getElementById('t-desc').value.trim(),
+    type:document.getElementById('t-type').value,
+    channel_ids:[...selChannels].join(','),
+    message_group_id:document.getElementById('t-group').value?Number(document.getElementById('t-group').value):null,
+    schedule_config:collectSched(),
+    test_mode:document.getElementById('t-testmode').checked,
+  };
+  _saving=true;
+  try{
+    if(id) await api('PUT',`/tasks/${id}`,body);
+    else   await api('POST','/tasks',body);
+    closeModal('modal-task');
+    await loadTasks();
+    toast(id?'Task atualizada!':'Task criada!');
+  }catch(e){toast('Erro: '+e.message,false);}
+  finally{_saving=false;}
+}
+
+async function delTask(){
+  const id=document.getElementById('t-id').value;
+  if(!id||!confirm('Excluir esta task permanentemente?')) return;
+  try{
+    await api('DELETE',`/tasks/${id}`);
+    closeModal('modal-task');
+    await loadTasks();
+    toast('Task excluída.');
+  }catch(e){toast('Erro: '+e.message,false);}
+}
+
+// ── Grupos ────────────────────────────────────────────────────────────────
+async function loadGroups(){
+  try{groups=await api('GET','/groups');renderGroups();}
+  catch(e){
+    document.getElementById('groups-list').innerHTML='<div class="empty"><div class="empty-ico">⚠️</div>Erro ao carregar grupos.</div>';
+    throw e;
+  }
+}
+function renderGroups(){
+  const el=document.getElementById('groups-list');
+  if(!groups.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">💬</div>Nenhum grupo. Clique em <b>Novo</b>.</div>';
+    return;
+  }
+  el.innerHTML=groups.map(g=>`<div class="li">
+    <div class="ico">💬</div>
+    <div class="ib">
+      <div class="in">${esc(g.name)}</div>
+      <div class="im">${g.message_count} mensagem(ns)${g.description?' · '+esc(g.description):''}</div>
+    </div>
+    <div class="ia"><button class="btn bg-b sm" onclick="openGroupModal(${g.id})">Editar</button></div>
+  </div>`).join('');
+}
+
+async function openGroupModal(id){
+  const isEdit=!!id;
+  document.getElementById('mg-title').textContent=isEdit?'Editar Grupo':'Novo Grupo';
+  document.getElementById('btn-del-group').classList.toggle('hidden',!isEdit);
+  document.getElementById('new-msg').value='';
+  if(isEdit){
+    try{
+      const g=await api('GET',`/groups/${id}`);
+      document.getElementById('g-id').value=g.id;
+      document.getElementById('g-name').value=g.name;
+      document.getElementById('g-desc').value=g.description;
+      editMsgs=g.messages||[];
+    }catch(e){toast('Erro ao carregar grupo',false);return;}
+  }else{
+    document.getElementById('g-id').value='';
+    document.getElementById('g-name').value='';
+    document.getElementById('g-desc').value='';
+    editMsgs=[];
+  }
+  renderMsgs();
+  openModal('modal-group');
+}
+function renderMsgs(){
+  const el=document.getElementById('msg-edit');
+  if(!editMsgs.length){
+    el.innerHTML='<div style="color:var(--t3);font-size:11px;padding:4px 0">Nenhuma mensagem ainda.</div>';
+    return;
+  }
+  el.innerHTML=editMsgs.map((m,i)=>`<div class="msg-row">
+    <span class="msg-txt${m.active===false?' off':''}">${esc(m.content)}</span>
+    <div class="msg-actions">
+      ${m.id
+        ?`<button class="btn bg-b sm" onclick="toggleMsg(${i})" title="${m.active!==false?'Desativar':'Ativar'}">${m.active!==false?'⏸':'▶'}</button>
+           <button class="btn bd sm" onclick="delMsg(${i})" title="Excluir">✕</button>`
+        :`<span style="font-size:10px;color:var(--t3);align-self:center">novo</span>
+          <button class="btn bd sm" onclick="rmPending(${i})">✕</button>`}
+    </div>
+  </div>`).join('');
+}
+async function addMsg(){
+  const c=document.getElementById('new-msg').value.trim();
+  if(!c){toast('Digite a mensagem primeiro',false);return;}
+  const gid=document.getElementById('g-id').value;
+  if(gid){
+    try{
+      const m=await api('POST',`/groups/${gid}/messages`,{content:c});
+      editMsgs.push(m);
+      document.getElementById('new-msg').value='';
+      renderMsgs();
+      toast('Mensagem adicionada!');
+    }catch(e){toast('Erro: '+e.message,false);}
+  }else{
+    editMsgs.push({content:c,active:true});
+    document.getElementById('new-msg').value='';
+    renderMsgs();
+  }
+}
+function rmPending(i){editMsgs.splice(i,1);renderMsgs();}
+async function delMsg(i){
+  const m=editMsgs[i];
+  if(!m?.id||!confirm('Excluir esta mensagem?')) return;
+  try{
+    await api('DELETE',`/messages/${m.id}`);
+    editMsgs.splice(i,1);
+    renderMsgs();
+    toast('Mensagem excluída.');
+  }catch(e){toast('Erro: '+e.message,false);}
+}
+async function toggleMsg(i){
+  const m=editMsgs[i];if(!m?.id)return;
+  try{
+    const u=await api('PUT',`/messages/${m.id}`,{active:!m.active});
+    editMsgs[i].active=u.active;
+    renderMsgs();
+  }catch(e){toast('Erro: '+e.message,false);}
+}
+async function saveGroup(){
+  if(_saving) return;
+  const id=document.getElementById('g-id').value;
+  const name=document.getElementById('g-name').value.trim();
+  const desc=document.getElementById('g-desc').value.trim();
+  if(!name){toast('Nome é obrigatório',false);return;}
+  _saving=true;
+  try{
+    let g;
+    if(id){
+      g=await api('PUT',`/groups/${id}`,{name,description:desc});
+    }else{
+      g=await api('POST','/groups',{name,description:desc});
+      for(const m of editMsgs.filter(x=>!x.id)){
+        await api('POST',`/groups/${g.id}/messages`,{content:m.content});
+      }
+    }
+    closeModal('modal-group');
+    await loadGroups();
+    toast(id?'Grupo atualizado!':'Grupo criado!');
+  }catch(e){toast('Erro: '+e.message,false);}
+  finally{_saving=false;}
+}
+async function delGroup(){
+  const id=document.getElementById('g-id').value;
+  if(!id||!confirm('Excluir grupo e todas as mensagens permanentemente?')) return;
+  try{
+    await api('DELETE',`/groups/${id}`);
+    closeModal('modal-group');
+    await loadGroups();
+    toast('Grupo excluído.');
+  }catch(e){toast('Erro: '+e.message,false);}
+}
+
+// ── Modal utils ───────────────────────────────────────────────────────────
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow='';
+}
+function closeBg(e,id){
+  if(e.target.id===id) closeModal(id);
+}
+
+// ── Utilitários ───────────────────────────────────────────────────────────
+function esc(s){
+  return String(s??'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Monitor ───────────────────────────────────────────────────────────────
+async function loadMonitor(){
+  await Promise.all([loadUpcoming(), loadSentHistory()]);
+}
+
+async function loadUpcoming(){
+  const el=document.getElementById('upcoming-list');
+  try{
+    const data=await api('GET','/upcoming');
+    if(!data.length){
+      el.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Nenhuma task ativa.</div>';
+      return;
+    }
+    el.innerHTML=data.map(t=>`
+      <div class="up-item">
+        <div class="up-name">
+          ${esc(t.name)}
+          ${t.test_mode?'<span class="badge bg-am" style="font-size:9px">🧪 teste</span>':''}
+        </div>
+        <div class="up-next">${esc(t.next_run)}</div>
+      </div>`).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar</div>';
+  }
+}
+
+async function loadSentHistory(){
+  const el=document.getElementById('sent-list');
+  try{
+    const data=await api('GET','/sent_history?limit=30');
+    if(!data.length){
+      el.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Nenhum envio registrado.</div>';
+      return;
+    }
+    el.innerHTML=data.map(r=>{
+      const key=r.key; // task_1_sent_20260414_0900
+      const parts=key.split('_sent_');
+      const taskPart=parts[0]; // task_1
+      const timePart=parts[1]||'';
+      const date=timePart.length>=8?timePart.slice(0,4)+'-'+timePart.slice(4,6)+'-'+timePart.slice(6,8):'';
+      const time=timePart.length>=13?timePart.slice(9,11)+':'+timePart.slice(11,13):'';
+      const taskId=taskPart.replace('task_','');
+      const task=tasks.find(t=>String(t.id)===taskId);
+      const taskName=task?task.name:'Task #'+taskId;
+      return`<div class="sent-item"><b>${esc(taskName)}</b> — ${date}${time?' às '+time:''}</div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar</div>';
+  }
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────
+let _autoReloadTimer=null;
+
+async function loadLogs(){
+  const lines=document.getElementById('log-lines').value;
+  const el=document.getElementById('log-container');
+  try{
+    const data=await api('GET',\`/logs?lines=\${lines}\`);
+    if(!data.exists){
+      el.innerHTML='<div class="empty"><div class="empty-ico">📋</div>Arquivo de log não encontrado ainda.</div>';
+      return;
+    }
+    if(!data.lines.length){
+      el.innerHTML='<div class="empty">Log vazio.</div>';
+      return;
+    }
+    el.innerHTML=data.lines.map(line=>{
+      let cls='log-info';
+      if(/ERROR|ERRO|exception/i.test(line)) cls='log-error';
+      else if(/WARN/i.test(line)) cls='log-warn';
+      else if(/enviado OK|enviada/i.test(line)) cls='log-ok';
+      else if(/TESTE|test/i.test(line)) cls='log-test';
+      return\`<span class="log-line \${cls}">\${esc(line)}</span>\`;
+    }).join('');
+    // scroll para o final
+    el.scrollTop=el.scrollHeight;
+    document.getElementById('log-info').textContent=
+      \`Total: \${data.total} linha(s) — exibindo as últimas \${data.lines.length}\`;
+  }catch(e){
+    el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar logs</div>';
+  }
+}
+
+function toggleAutoReload(){
+  const checked=document.getElementById('log-autoreload').checked;
+  if(checked){
+    loadLogs();
+    _autoReloadTimer=setInterval(loadLogs,10000); // a cada 10s
+  }else{
+    clearInterval(_autoReloadTimer);
+    _autoReloadTimer=null;
+  }
+}
+
+// Sobrescrever showV para carregar dados das novas views
+const _origShowV=showV;
+function showV(v,el){
+  _origShowV(v,el);
+  if(v==='monitor') loadMonitor();
+  if(v==='logs') loadLogs();
+  if(v==='tasks'||v==='groups') clearInterval(_autoReloadTimer);
+}
+</script>
+</body>
+</html>

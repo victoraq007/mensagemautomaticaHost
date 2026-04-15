@@ -1,0 +1,402 @@
+# dashboard/app.py
+from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, session
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from config import DASHBOARD_SECRET_KEY, DASHBOARD_USERNAME, DASHBOARD_PASSWORD
+from database import get_session
+from models import TaskConfig, MessageGroup, Message, Settings
+import json, datetime, functools, os
+
+MAX_MSG_LEN = 1900  # Discord limita 2000, deixamos margem para o prefixo [TESTE]
+
+def create_app() -> Flask:
+    app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.secret_key = DASHBOARD_SECRET_KEY
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["200/hour"],
+        storage_uri="memory://",
+    )
+
+    # ── Auth helpers ──────────────────────────────────────────────────────────
+    def login_required(f):
+        @functools.wraps(f)
+        def decorated(*args, **kwargs):
+            if not session.get("logged_in"):
+                if request.path.startswith("/api/"):
+                    return jsonify({"error": "Não autorizado"}), 401
+                return redirect(url_for("login_page"))
+            return f(*args, **kwargs)
+        return decorated
+
+    @app.route("/login", methods=["GET"])
+    def login_page():
+        if session.get("logged_in"):
+            return redirect("/")
+        return render_template("login.html")
+
+    @app.route("/login", methods=["POST"])
+    @limiter.limit("10/minute")
+    def do_login():
+        data = request.get_json(force=True) if request.is_json else request.form
+        user = (data.get("username") or "").strip()
+        pw   = (data.get("password") or "").strip()
+        import hmac
+        ok = hmac.compare_digest(user, DASHBOARD_USERNAME) and hmac.compare_digest(pw, DASHBOARD_PASSWORD)
+        if ok:
+            session["logged_in"] = True
+            session.permanent = True
+            if request.is_json:
+                return jsonify({"ok": True})
+            return redirect("/")
+        if request.is_json:
+            return jsonify({"error": "Usuário ou senha incorretos"}), 401
+        return render_template("login.html", error="Usuário ou senha incorretos")
+
+    @app.route("/logout")
+    def logout():
+        session.clear()
+        return redirect("/login")
+
+    # ── Página principal ──────────────────────────────────────────────────────
+    @app.route("/")
+    @login_required
+    def index():
+        return render_template("index.html")
+
+    # ── Canais ────────────────────────────────────────────────────────────────
+    @app.route("/api/channels")
+    @login_required
+    def list_channels():
+        try:
+            from cogs.tasks_cog import get_bot_channels
+            return jsonify(get_bot_channels())
+        except Exception:
+            return jsonify([])
+
+    # ── API — Logs ────────────────────────────────────────────────────────────
+    @app.route("/api/logs")
+    @login_required
+    def get_logs():
+        lines = int(request.args.get("lines", 100))
+        lines = min(lines, 500)
+        log_path = os.path.join("logs", "tasks.log")
+        if not os.path.exists(log_path):
+            return jsonify({"lines": [], "exists": False})
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            all_lines = f.readlines()
+        return jsonify({"lines": [l.rstrip() for l in all_lines[-lines:]], "exists": True, "total": len(all_lines)})
+
+    @app.route("/api/upcoming")
+    @login_required
+    def upcoming_tasks():
+        """Retorna previsão das próximas execuções de cada task ativa."""
+        import pytz
+        from config import TIMEZONE
+        now = datetime.datetime.now(TIMEZONE)
+        result = []
+        with get_session() as s:
+            tasks = s.query(TaskConfig).filter_by(active=True).all()
+            for t in tasks:
+                cfg = json.loads(t.schedule_config or "{}")
+                desc = _next_run_desc(t.type, t.test_mode, cfg, now)
+                result.append({
+                    "id": t.id,
+                    "name": t.name,
+                    "type": t.type,
+                    "test_mode": bool(t.test_mode),
+                    "next_run": desc,
+                })
+        return jsonify(result)
+
+    @app.route("/api/sent_history")
+    @login_required
+    def sent_history():
+        """Últimas N chaves de envio registradas no banco (Settings)."""
+        limit = min(int(request.args.get("limit", 50)), 200)
+        with get_session() as s:
+            rows = s.query(Settings)\
+                    .filter(Settings.key.like("task_%_sent_%"))\
+                    .order_by(Settings.id.desc())\
+                    .limit(limit).all()
+            return jsonify([{"key": r.key, "value": r.value} for r in rows])
+
+    # ── API — Grupos ──────────────────────────────────────────────────────────
+    @app.route("/api/groups", methods=["GET"])
+    @login_required
+    def list_groups():
+        with get_session() as s:
+            gs = s.query(MessageGroup).order_by(MessageGroup.id).all()
+            return jsonify([_sg(g) for g in gs])
+
+    @app.route("/api/groups", methods=["POST"])
+    @login_required
+    @limiter.limit("30/minute")
+    def create_group():
+        d = request.get_json(force=True)
+        if not (d.get("name") or "").strip():
+            abort(400, "name obrigatório")
+        with get_session() as s:
+            g = MessageGroup(name=d["name"].strip()[:200], description=d.get("description","")[:500])
+            s.add(g); s.flush()
+            return jsonify(_sg(g)), 201
+
+    @app.route("/api/groups/<int:gid>", methods=["GET"])
+    @login_required
+    def get_group(gid):
+        with get_session() as s:
+            g = s.query(MessageGroup).filter_by(id=gid).first()
+            if not g: abort(404)
+            return jsonify(_sg(g, True))
+
+    @app.route("/api/groups/<int:gid>", methods=["PUT"])
+    @login_required
+    @limiter.limit("30/minute")
+    def update_group(gid):
+        d = request.get_json(force=True)
+        with get_session() as s:
+            g = s.query(MessageGroup).filter_by(id=gid).first()
+            if not g: abort(404)
+            if d.get("name","").strip(): g.name = d["name"].strip()[:200]
+            if "description" in d: g.description = d["description"][:500]
+            return jsonify(_sg(g))
+
+    @app.route("/api/groups/<int:gid>", methods=["DELETE"])
+    @login_required
+    @limiter.limit("20/minute")
+    def delete_group(gid):
+        with get_session() as s:
+            g = s.query(MessageGroup).filter_by(id=gid).first()
+            if not g: abort(404)
+            s.delete(g)
+        return jsonify({"ok": True})
+
+    @app.route("/api/groups/<int:gid>/messages", methods=["POST"])
+    @login_required
+    @limiter.limit("60/minute")
+    def add_message(gid):
+        d = request.get_json(force=True)
+        content = (d.get("content") or "").strip()
+        if not content:
+            abort(400, "content obrigatório")
+        if len(content) > MAX_MSG_LEN:
+            abort(400, f"Mensagem muito longa ({len(content)} chars). Máximo: {MAX_MSG_LEN}")
+        with get_session() as s:
+            if not s.query(MessageGroup).filter_by(id=gid).first(): abort(404)
+            m = Message(group_id=gid, content=content, active=True)
+            s.add(m); s.flush()
+            return jsonify(_sm(m)), 201
+
+    @app.route("/api/messages/<int:mid>", methods=["PUT"])
+    @login_required
+    @limiter.limit("60/minute")
+    def update_message(mid):
+        d = request.get_json(force=True)
+        with get_session() as s:
+            m = s.query(Message).filter_by(id=mid).first()
+            if not m: abort(404)
+            if "content" in d:
+                content = d["content"].strip()
+                if len(content) > MAX_MSG_LEN:
+                    abort(400, f"Mensagem muito longa ({len(content)} chars). Máximo: {MAX_MSG_LEN}")
+                m.content = content
+            if "active" in d: m.active = bool(d["active"])
+            return jsonify(_sm(m))
+
+    @app.route("/api/messages/<int:mid>", methods=["DELETE"])
+    @login_required
+    @limiter.limit("30/minute")
+    def delete_message(mid):
+        with get_session() as s:
+            m = s.query(Message).filter_by(id=mid).first()
+            if not m: abort(404)
+            s.delete(m)
+        return jsonify({"ok": True})
+
+    # ── API — Tasks ───────────────────────────────────────────────────────────
+    @app.route("/api/tasks", methods=["GET"])
+    @login_required
+    def list_tasks():
+        with get_session() as s:
+            ts = s.query(TaskConfig).order_by(TaskConfig.id).all()
+            return jsonify([_st(t) for t in ts])
+
+    @app.route("/api/tasks", methods=["POST"])
+    @login_required
+    @limiter.limit("30/minute")
+    def create_task():
+        d = request.get_json(force=True)
+        errs = _validate_task(d)
+        if errs: abort(400, "; ".join(errs))
+        with get_session() as s:
+            t = TaskConfig(
+                name=d["name"].strip()[:200],
+                description=d.get("description","")[:500],
+                type=d["type"],
+                channel_ids=_norm(d["channel_ids"]),
+                message_group_id=d.get("message_group_id") or None,
+                schedule_config=json.dumps(d.get("schedule_config",{})),
+                active=d.get("active", True),
+                test_mode=d.get("test_mode", False),
+            )
+            s.add(t); s.flush()
+            return jsonify(_st(t)), 201
+
+    @app.route("/api/tasks/<int:tid>", methods=["GET"])
+    @login_required
+    def get_task(tid):
+        with get_session() as s:
+            t = s.query(TaskConfig).filter_by(id=tid).first()
+            if not t: abort(404)
+            return jsonify(_st(t))
+
+    @app.route("/api/tasks/<int:tid>", methods=["PUT"])
+    @login_required
+    @limiter.limit("30/minute")
+    def update_task(tid):
+        d = request.get_json(force=True)
+        with get_session() as s:
+            t = s.query(TaskConfig).filter_by(id=tid).first()
+            if not t: abort(404)
+            if d.get("name","").strip(): t.name = d["name"].strip()[:200]
+            if "description"      in d: t.description    = d["description"][:500]
+            if "type"             in d: t.type            = d["type"]
+            if "channel_ids"      in d: t.channel_ids     = _norm(d["channel_ids"])
+            if "message_group_id" in d: t.message_group_id= d["message_group_id"] or None
+            if "schedule_config"  in d: t.schedule_config = json.dumps(d["schedule_config"])
+            if "active"           in d: t.active          = bool(d["active"])
+            if "test_mode"        in d: t.test_mode       = bool(d["test_mode"])
+            t.updated_at = datetime.datetime.utcnow()
+            return jsonify(_st(t))
+
+    @app.route("/api/tasks/<int:tid>", methods=["DELETE"])
+    @login_required
+    @limiter.limit("20/minute")
+    def delete_task(tid):
+        with get_session() as s:
+            t = s.query(TaskConfig).filter_by(id=tid).first()
+            if not t: abort(404)
+            s.delete(t)
+        return jsonify({"ok": True})
+
+    @app.route("/api/tasks/<int:tid>/toggle", methods=["POST"])
+    @login_required
+    def toggle_task(tid):
+        with get_session() as s:
+            t = s.query(TaskConfig).filter_by(id=tid).first()
+            if not t: abort(404)
+            t.active = not t.active
+            t.updated_at = datetime.datetime.utcnow()
+            return jsonify({"id": t.id, "active": t.active})
+
+    @app.route("/api/tasks/<int:tid>/toggle_test", methods=["POST"])
+    @login_required
+    def toggle_test(tid):
+        with get_session() as s:
+            t = s.query(TaskConfig).filter_by(id=tid).first()
+            if not t: abort(404)
+            t.test_mode = not t.test_mode
+            t.updated_at = datetime.datetime.utcnow()
+            return jsonify({"id": t.id, "test_mode": t.test_mode})
+
+    # ── Erros JSON ────────────────────────────────────────────────────────────
+    @app.errorhandler(400)
+    @app.errorhandler(401)
+    @app.errorhandler(404)
+    @app.errorhandler(429)
+    @app.errorhandler(500)
+    def handle_error(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": str(e)}), e.code
+        return str(e), e.code
+
+    _register_pwa(app)
+    return app
+
+
+# ── PWA ───────────────────────────────────────────────────────────────────────
+import os as _os
+from flask import send_from_directory as _sfd
+
+def _register_pwa(app):
+    static_dir = _os.path.join(_os.path.dirname(__file__), 'static')
+
+    @app.route('/manifest.json')
+    def manifest():
+        return _sfd(static_dir, 'manifest.json', mimetype='application/manifest+json')
+
+    @app.route('/sw.js')
+    def service_worker():
+        r = _sfd(static_dir, 'sw.js', mimetype='application/javascript')
+        r.headers['Service-Worker-Allowed'] = '/'
+        r.headers['Cache-Control'] = 'no-cache'
+        return r
+
+    @app.route('/icon-192.png')
+    def icon192():
+        return _sfd(static_dir, 'icon-192.png', mimetype='image/png')
+
+    @app.route('/icon-512.png')
+    def icon512():
+        return _sfd(static_dir, 'icon-512.png', mimetype='image/png')
+
+
+# ── Serializers ───────────────────────────────────────────────────────────────
+def _sm(m):
+    return {"id":m.id,"group_id":m.group_id,"content":m.content,"active":m.active,
+            "created_at":m.created_at.isoformat() if m.created_at else None,
+            "length": len(m.content)}
+
+def _sg(g, msgs=True):
+    d = {"id":g.id,"name":g.name,"description":g.description,
+         "message_count":len(g.messages),
+         "created_at":g.created_at.isoformat() if g.created_at else None}
+    if msgs: d["messages"] = [_sm(m) for m in g.messages]
+    return d
+
+def _st(t):
+    return {"id":t.id,"name":t.name,"description":t.description,"type":t.type,
+            "channel_ids":t.channel_ids,"message_group_id":t.message_group_id,
+            "schedule_config":json.loads(t.schedule_config or "{}"),
+            "active":t.active,"test_mode":bool(t.test_mode),
+            "created_at":t.created_at.isoformat() if t.created_at else None,
+            "updated_at":t.updated_at.isoformat() if t.updated_at else None}
+
+VALID_TYPES = {"fixed_times","interval_days","weekly","monthly","test"}
+
+def _validate_task(d):
+    e = []
+    if not (d.get("name") or "").strip(): e.append("name obrigatório")
+    if d.get("type") not in VALID_TYPES:  e.append(f"type inválido")
+    if not d.get("channel_ids"):          e.append("channel_ids obrigatório")
+    return e
+
+def _norm(raw):
+    if isinstance(raw, list):
+        return ",".join(str(x).strip() for x in raw if str(x).strip())
+    return ",".join(x.strip() for x in str(raw).split(",") if x.strip())
+
+def _next_run_desc(task_type, test_mode, cfg, now):
+    if test_mode:
+        every = cfg.get("every_minutes", 2)
+        return f"Próxima em até {every} min (modo teste)"
+    if task_type == "weekly":
+        days = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"]
+        dow  = cfg.get("days_of_week", [0,1,2,3,4])
+        return f"Semanal — {', '.join(days[d] for d in dow)} {cfg.get('hour_start',9)}h–{cfg.get('hour_end',18)}h"
+    if task_type == "monthly":
+        months = cfg.get("months",[])
+        mstr = "todo mês" if not months else f"meses {months}"
+        return f"Mensal — {mstr} {cfg.get('hour_start',9)}h–{cfg.get('hour_end',18)}h"
+    if task_type == "fixed_times":
+        times = cfg.get("times",[])
+        return f"Horários fixos: {', '.join(times)}"
+    if task_type == "interval_days":
+        every = cfg.get("every_days", 10)
+        start = cfg.get("start_from", "hoje")
+        return f"A cada {every} dias (ref: {start})"
+    return "—"

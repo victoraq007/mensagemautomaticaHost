@@ -1,0 +1,10 @@
+discord.py>=2.3.0
+gspread>=6.0.0
+google-auth>=2.0.0
+pytz
+SQLAlchemy>=2.0.0
+python-dotenv>=1.0.0
+Flask>=3.0.0
+Flask-Limiter>=3.5.0
+alembic>=1.13.0
+gunicorn>=21.0.0
