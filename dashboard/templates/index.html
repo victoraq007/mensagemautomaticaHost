@@ -1116,7 +1116,7 @@ function esc(s){
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Monitor ───────────────────────────────────────────────────────────────
+// ── Monitor ─────────────────────────────────────────────────────────────
 async function loadMonitor(){
   await Promise.all([loadUpcoming(), loadSentHistory()]);
 }
@@ -1126,17 +1126,13 @@ async function loadUpcoming(){
   try{
     const data=await api('GET','/upcoming');
     if(!data.length){
-      el.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Nenhuma task ativa.</div>';
+      el.innerHTML='<div class="empty"><div class="empty-ico">\u{1F4EB}</div>Nenhuma task ativa.</div>';
       return;
     }
-    el.innerHTML=data.map(t=>`
-      <div class="up-item">
-        <div class="up-name">
-          ${esc(t.name)}
-          ${t.test_mode?'<span class="badge bg-am" style="font-size:9px">🧪 teste</span>':''}
-        </div>
-        <div class="up-next">${esc(t.next_run)}</div>
-      </div>`).join('');
+    el.innerHTML=data.map(function(t){
+      var badge=t.test_mode?'<span class="badge bg-am" style="font-size:9px">\u{1F9EA} teste</span>':'';
+      return '<div class="up-item"><div class="up-name">'+esc(t.name)+' '+badge+'</div><div class="up-next">'+esc(t.next_run)+'</div></div>';
+    }).join('');
   }catch(e){
     el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar</div>';
   }
@@ -1147,20 +1143,22 @@ async function loadSentHistory(){
   try{
     const data=await api('GET','/sent_history?limit=30');
     if(!data.length){
-      el.innerHTML='<div class="empty"><div class="empty-ico">📭</div>Nenhum envio registrado.</div>';
+      el.innerHTML='<div class="empty"><div class="empty-ico">\u{1F4EB}</div>Nenhum envio registrado ainda.</div>';
       return;
     }
-    el.innerHTML=data.map(r=>{
-      const key=r.key; // task_1_sent_20260414_0900
-      const parts=key.split('_sent_');
-      const taskPart=parts[0]; // task_1
-      const timePart=parts[1]||'';
-      const date=timePart.length>=8?timePart.slice(0,4)+'-'+timePart.slice(4,6)+'-'+timePart.slice(6,8):'';
-      const time=timePart.length>=13?timePart.slice(9,11)+':'+timePart.slice(11,13):'';
-      const taskId=taskPart.replace('task_','');
-      const task=tasks.find(t=>String(t.id)===taskId);
-      const taskName=task?task.name:'Task #'+taskId;
-      return`<div class="sent-item"><b>${esc(taskName)}</b> — ${date}${time?' às '+time:''}</div>`;
+    el.innerHTML=data.map(function(r){
+      var key=r.key;
+      var parts=key.split('_sent_');
+      var taskPart=parts[0];
+      var timePart=parts[1]||'';
+      var date='';
+      var time='';
+      if(timePart.length>=8) date=timePart.slice(0,4)+'-'+timePart.slice(4,6)+'-'+timePart.slice(6,8);
+      if(timePart.length>=13) time=timePart.slice(9,11)+':'+timePart.slice(11,13);
+      var taskId=taskPart.replace('task_','');
+      var task=tasks.find(function(t){return String(t.id)===taskId;});
+      var taskName=task?task.name:'Task #'+taskId;
+      return '<div class="sent-item"><b>'+esc(taskName)+'</b> \u2014 '+date+(time?' \xe0s '+time:'')+'</div>';
     }).join('');
   }catch(e){
     el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar</div>';
@@ -1168,57 +1166,56 @@ async function loadSentHistory(){
 }
 
 // ── Logs ──────────────────────────────────────────────────────────────────
-let _autoReloadTimer=null;
+var _autoReloadTimer=null;
 
 async function loadLogs(){
-  const lines=document.getElementById('log-lines').value;
-  const el=document.getElementById('log-container');
+  var lines=document.getElementById('log-lines').value;
+  var el=document.getElementById('log-container');
   try{
-    const data=await api('GET',\`/logs?lines=\${lines}\`);
+    var data=await api('GET','/logs?lines='+lines);
     if(!data.exists){
-      el.innerHTML='<div class="empty"><div class="empty-ico">📋</div>Arquivo de log não encontrado ainda.</div>';
+      el.innerHTML='<div class="empty"><div class="empty-ico">\u{1F4CB}</div>Arquivo de log n\xe3o encontrado ainda.</div>';
       return;
     }
     if(!data.lines.length){
       el.innerHTML='<div class="empty">Log vazio.</div>';
       return;
     }
-    el.innerHTML=data.lines.map(line=>{
-      let cls='log-info';
+    el.innerHTML=data.lines.map(function(line){
+      var cls='log-info';
       if(/ERROR|ERRO|exception/i.test(line)) cls='log-error';
       else if(/WARN/i.test(line)) cls='log-warn';
       else if(/enviado OK|enviada/i.test(line)) cls='log-ok';
       else if(/TESTE|test/i.test(line)) cls='log-test';
-      return\`<span class="log-line \${cls}">\${esc(line)}</span>\`;
+      return '<span class="log-line '+cls+'">'+esc(line)+'</span>';
     }).join('');
-    // scroll para o final
     el.scrollTop=el.scrollHeight;
-    document.getElementById('log-info').textContent=
-      \`Total: \${data.total} linha(s) — exibindo as últimas \${data.lines.length}\`;
+    var info=document.getElementById('log-info');
+    if(info) info.textContent='Total: '+data.total+' linha(s) \u2014 exibindo as \xfaltimas '+data.lines.length;
   }catch(e){
     el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar logs</div>';
   }
 }
 
 function toggleAutoReload(){
-  const checked=document.getElementById('log-autoreload').checked;
+  var checked=document.getElementById('log-autoreload').checked;
   if(checked){
     loadLogs();
-    _autoReloadTimer=setInterval(loadLogs,10000); // a cada 10s
+    _autoReloadTimer=setInterval(loadLogs,10000);
   }else{
     clearInterval(_autoReloadTimer);
     _autoReloadTimer=null;
   }
 }
 
-// Sobrescrever showV para carregar dados das novas views
-const _origShowV=showV;
-function showV(v,el){
+// Interceptar showV para carregar dados das novas views
+var _origShowV=showV;
+showV=function(v,el){
   _origShowV(v,el);
   if(v==='monitor') loadMonitor();
   if(v==='logs') loadLogs();
-  if(v==='tasks'||v==='groups') clearInterval(_autoReloadTimer);
-}
+  if(v==='tasks'||v==='groups'){ clearInterval(_autoReloadTimer); _autoReloadTimer=null; }
+};
 </script>
 </body>
 </html>
