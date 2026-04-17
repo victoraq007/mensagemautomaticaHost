@@ -5,9 +5,18 @@ from config import TOKEN
 from cogs.tasks_cog import TasksCog
 from logger_setup import setup_root_logger
 import threading
+import sys
 
 # ── Logger ────────────────────────────────────────────────────────────────────
 geral_logger = setup_root_logger()
+
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    geral_logger.critical("EXCEÇÃO NÃO TRATADA (CRITICAL BUG)", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = global_exception_handler
 
 # ── Bot ───────────────────────────────────────────────────────────────────────
 intents = discord.Intents.default()
