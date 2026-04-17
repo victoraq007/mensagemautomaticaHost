@@ -3,8 +3,10 @@ import os
 import secrets
 import pytz
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path)
 
 DEBUG    = os.getenv("DEBUG", "false").lower() == "true"
 TIMEZONE = pytz.timezone("America/Sao_Paulo")

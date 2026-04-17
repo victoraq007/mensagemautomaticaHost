@@ -13,7 +13,7 @@ from config import (
     DASHBOARD_USERNAME,
 )
 from database import get_session
-from models import TaskConfig, MessageGroup, Message, Settings
+from models import TaskConfig, MessageGroup, Message, Settings, TaskExecutionLog
 import json, datetime, functools, os
 
 MAX_MSG_LEN = 1900  # Discord limita 2000, deixamos margem para o prefixo [TESTE]
@@ -90,6 +90,30 @@ def create_app() -> Flask:
         except Exception:
             return jsonify([])
 
+    @app.route("/api/roles")
+    @login_required
+    def list_roles():
+        try:
+            from cogs.tasks_cog import _bot_ref
+            if not _bot_ref:
+                return []
+            
+            roles_set = {}
+            for guild in _bot_ref.guilds:
+                for r in guild.roles:
+                    if r.name != "@everyone" and not r.managed:
+                        roles_set[str(r.id)] = {
+                            "id": str(r.id),
+                            "name": r.name,
+                            "color": str(r.color)
+                        }
+            # ordenar por nome
+            res = list(roles_set.values())
+            res.sort(key=lambda x: x["name"].lower())
+            return jsonify(res)
+        except Exception:
+            return jsonify([])
+
     # ── API — Logs ────────────────────────────────────────────────────────────
     @app.route("/api/logs")
     @login_required
@@ -136,6 +160,25 @@ def create_app() -> Flask:
                     .order_by(Settings.id.desc())\
                     .limit(limit).all()
             return jsonify([{"key": r.key, "value": r.value} for r in rows])
+
+    @app.route("/api/logs_db")
+    @login_required
+    def get_logs_db():
+        """Retorna os logs registrados em TaskExecutionLog."""
+        limit = min(int(request.args.get("limit", 100)), 500)
+        try:
+            with get_session() as s:
+                rows = s.query(TaskExecutionLog).order_by(TaskExecutionLog.id.desc()).limit(limit).all()
+                return jsonify([{
+                    "id": r.id,
+                    "task_name": r.task_name,
+                    "channel_id": r.channel_id,
+                    "status": r.status,
+                    "error_msg": r.error_msg,
+                    "created_at": r.created_at.isoformat() if r.created_at else None
+                } for r in rows])
+        except Exception:
+            return jsonify([])
 
     # ── API — Grupos ──────────────────────────────────────────────────────────
     @app.route("/api/groups", methods=["GET"])
@@ -199,7 +242,14 @@ def create_app() -> Flask:
             abort(400, f"Mensagem muito longa ({len(content)} chars). Máximo: {MAX_MSG_LEN}")
         with get_session() as s:
             if not s.query(MessageGroup).filter_by(id=gid).first(): abort(404)
-            m = Message(group_id=gid, content=content, active=True)
+            m = Message(
+                group_id=gid, 
+                content=content, 
+                is_embed=bool(d.get("is_embed", False)),
+                embed_color=str(d.get("embed_color", ""))[:50],
+                media_url=str(d.get("media_url", ""))[:500],
+                active=True
+            )
             s.add(m); s.flush()
             return jsonify(_sm(m)), 201
 
@@ -216,6 +266,9 @@ def create_app() -> Flask:
                 if len(content) > MAX_MSG_LEN:
                     abort(400, f"Mensagem muito longa ({len(content)} chars). Máximo: {MAX_MSG_LEN}")
                 m.content = content
+            if "is_embed" in d: m.is_embed = bool(d["is_embed"])
+            if "embed_color" in d: m.embed_color = str(d["embed_color"])[:50]
+            if "media_url" in d: m.media_url = str(d["media_url"])[:500]
             if "active" in d: m.active = bool(d["active"])
             return jsonify(_sm(m))
 
@@ -250,6 +303,7 @@ def create_app() -> Flask:
                 description=d.get("description","")[:500],
                 type=d["type"],
                 channel_ids=_normalize_channels(d["channel_ids"]),
+                roles_to_mention=_normalize_channels(d.get("roles_to_mention", "")),
                 message_group_id=d.get("message_group_id") or None,
                 schedule_config=json.dumps(d.get("schedule_config", {})),
                 active=d.get("active", True),
@@ -282,6 +336,7 @@ def create_app() -> Flask:
             if "description"      in d: t.description    = d["description"][:500]
             if "type"             in d: t.type            = d["type"]
             if "channel_ids"      in d: t.channel_ids     = _normalize_channels(d["channel_ids"])
+            if "roles_to_mention" in d: t.roles_to_mention = _normalize_channels(d["roles_to_mention"])
             if "message_group_id" in d: t.message_group_id= d["message_group_id"] or None
             if "schedule_config"  in d: t.schedule_config = json.dumps(d["schedule_config"])
             if "active"           in d: t.active          = bool(d["active"])
@@ -374,6 +429,9 @@ def _register_pwa(app):
 # ── Serializers ───────────────────────────────────────────────────────────────
 def _sm(m):
     return {"id":m.id,"group_id":m.group_id,"content":m.content,"active":m.active,
+            "is_embed":getattr(m, "is_embed", False),
+            "embed_color":getattr(m, "embed_color", ""),
+            "media_url":getattr(m, "media_url", ""),
             "created_at":m.created_at.isoformat() if m.created_at else None,
             "length": len(m.content)}
 
@@ -387,6 +445,7 @@ def _sg(g, msgs=True):
 def _st(t):
     return {"id":t.id,"name":t.name,"description":t.description,"type":t.type,
             "channel_ids":t.channel_ids,"message_group_id":t.message_group_id,
+            "roles_to_mention":getattr(t, "roles_to_mention", ""),
             "schedule_config":json.loads(t.schedule_config or "{}"),
             "active":t.active,"test_mode":bool(t.test_mode),
             "created_at":t.created_at.isoformat() if t.created_at else None,

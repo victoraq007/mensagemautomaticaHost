@@ -471,6 +471,14 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <div class="ch-info" id="ch-sel-info">Nenhum canal selecionado</div>
     </div>
 
+    <!-- Cargos / Roles -->
+    <div class="fg" style="margin-top:14px">
+      <label class="fl" style="display:flex;align-items:center;gap:8px">Cargos para Mencionar (@Roles)</label>
+      <input class="ch-search" id="r-search" placeholder="Buscar cargo..." oninput="filterRoles()" autocomplete="off" aria-label="Buscar cargo">
+      <div class="ch-list" id="r-list"></div>
+      <div class="ch-info" id="r-sel-info">Nenhum cargo selecionado</div>
+    </div>
+
     <div class="fg">
       <label class="fl" for="t-group">Grupo de mensagens</label>
       <select class="fs" id="t-group"><option value="">— nenhum —</option></select>
@@ -520,11 +528,17 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <input class="fi" id="g-desc" placeholder="Opcional" autocomplete="off">
     </div>
     <div class="fg">
-      <label class="fl">Mensagens</label>
+      <label class="fl">Mensagens do Grupo</label>
       <div class="msg-list" id="msg-edit"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <textarea class="fta" id="new-msg" placeholder="Digite a mensagem..." style="min-height:54px;flex:1" aria-label="Nova mensagem"></textarea>
-        <button class="btn bg-b" style="align-self:flex-end;flex-shrink:0" onclick="addMsg()">+ Add</button>
+      <div style="background:var(--bg3); padding:10px; border-radius:var(--r); border:1px solid var(--b); margin-top:8px">
+        <label class="fl">Nova Mensagem</label>
+        <textarea class="fta" id="new-msg" placeholder="Texto (variáveis permitidas: {hoje}, {hora}, {dia_semana}, {canal})" style="min-height:54px;margin-bottom:8px"></textarea>
+        <label class="fl" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="new-is-embed"> Usar Rich Embed no envio</label>
+        <div class="fr" style="margin-top:6px; margin-bottom:8px">
+          <input class="fi" id="new-embed-color" placeholder="Cor HEX (ex: #ff0000)">
+          <input class="fi" id="new-media-url" placeholder="URL de Imagem (opcional)">
+        </div>
+        <button class="btn bg-b" style="width:100%" onclick="addMsg()">+ Adicionar Mensagem</button>
       </div>
     </div>
   </div>
@@ -558,7 +572,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
 'use strict';
 
 // ── Estado global ─────────────────────────────────────────────────────────
-let tasks=[], groups=[], channels=[], selChannels=new Set(), editMsgs=[];
+let tasks=[], groups=[], channels=[], roles=[], selChannels=new Set(), selRoles=new Set(), editMsgs=[];
 let curView='tasks';
 let deferredPrompt=null;
 let _saving=false; // lock anti-double-submit
@@ -570,6 +584,7 @@ const MONTHS=[['Jan',1],['Fev',2],['Mar',3],['Abr',4],['Mai',5],['Jun',6],['Jul'
 document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   initPWA();
+  loadRoles();
   loadAll();
   reloadChannels();
   renderSched();
@@ -743,6 +758,39 @@ function setSelChannels(ids){
   renderChannelList();
 }
 
+async function loadRoles(silent=true){
+  try{
+    roles=await api('GET','/roles');
+    renderRoleList();
+    if(!silent) toast('Cargos carregados');
+  }catch(e){if(!silent)toast('Erro ao carregar cargos',false);}
+}
+function renderRoleList(){
+  const q=(document.getElementById('r-search')?.value||'').toLowerCase();
+  const vis=roles.filter(r=>!q||r.name.toLowerCase().includes(q));
+  const el=document.getElementById('r-list');
+  if(!el) return;
+  if(!vis.length){
+    el.innerHTML='<div style="padding:10px;text-align:center;color:var(--t3);font-size:11px">Nenhum cargo encontrado</div>';
+    return;
+  }
+  el.innerHTML=vis.map(r=>{
+    const s=selRoles.has(r.id);
+    return `<div class="ch-item${s?' sel':''}" onclick="toggleRole('${r.id}')" role="option" aria-selected="${s}">
+      <div class="ch-chk">${s?'<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2.5"><path d="M1 5l3 3 5-5"/></svg>':''}</div>
+      <span class="ch-name" style="color:${r.color!=='#000000'?r.color:''}">@${esc(r.name)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('r-sel-info').textContent=selRoles.size?selRoles.size+' cargo(s) selecionado(s)':'Nenhum';
+}
+function toggleRole(id){selRoles.has(id)?selRoles.delete(id):selRoles.add(id);renderRoleList();}
+function filterRoles(){renderRoleList();}
+function setSelRoles(ids){
+  selRoles.clear();
+  ids.forEach(id=>selRoles.add(String(id).trim()));
+  renderRoleList();
+}
+
 // ── Tasks ─────────────────────────────────────────────────────────────────
 async function loadAll(){
   try{await Promise.all([loadTasks(),loadGroups()]);}
@@ -819,7 +867,9 @@ function openTaskModal(id){
   document.getElementById('t-type').value=t?.type||'weekly';
   document.getElementById('t-testmode').checked=!!t?.test_mode;
   document.getElementById('ch-search').value='';
+  document.getElementById('r-search').value='';
   setSelChannels(t?.channel_ids?t.channel_ids.split(','):[] );
+  setSelRoles(t?.roles_to_mention?t.roles_to_mention.split(','):[] );
   const sel=document.getElementById('t-group');
   sel.innerHTML='<option value="">— nenhum —</option>'+
     groups.map(g=>`<option value="${g.id}"${t?.message_group_id===g.id?' selected':''}>${esc(g.name)}</option>`).join('');
@@ -936,6 +986,7 @@ async function saveTask(){
     description:document.getElementById('t-desc').value.trim(),
     type:document.getElementById('t-type').value,
     channel_ids:[...selChannels].join(','),
+    roles_to_mention:[...selRoles].join(','),
     message_group_id:document.getElementById('t-group').value?Number(document.getElementById('t-group').value):null,
     schedule_config:collectSched(),
     test_mode:document.getElementById('t-testmode').checked,
@@ -1015,7 +1066,7 @@ function renderMsgs(){
     return;
   }
   el.innerHTML=editMsgs.map((m,i)=>`<div class="msg-row">
-    <span class="msg-txt${m.active===false?' off':''}">${esc(m.content)}</span>
+    <span class="msg-txt${m.active===false?' off':''}">${m.is_embed?'<span class="badge bg-pu">Embed</span> ':''}${esc(m.content)}</span>
     <div class="msg-actions">
       ${m.id
         ?`<button class="btn bg-b sm" onclick="toggleMsg(${i})" title="${m.active!==false?'Desativar':'Ativar'}">${m.active!==false?'⏸':'▶'}</button>
@@ -1027,18 +1078,21 @@ function renderMsgs(){
 }
 async function addMsg(){
   const c=document.getElementById('new-msg').value.trim();
+  const isE=document.getElementById('new-is-embed').checked;
+  const col=document.getElementById('new-embed-color').value.trim();
+  const url=document.getElementById('new-media-url').value.trim();
   if(!c){toast('Digite a mensagem primeiro',false);return;}
   const gid=document.getElementById('g-id').value;
   if(gid){
     try{
-      const m=await api('POST',`/groups/${gid}/messages`,{content:c});
+      const m=await api('POST',`/groups/${gid}/messages`,{content:c, is_embed:isE, embed_color:col, media_url:url});
       editMsgs.push(m);
       document.getElementById('new-msg').value='';
       renderMsgs();
       toast('Mensagem adicionada!');
     }catch(e){toast('Erro: '+e.message,false);}
   }else{
-    editMsgs.push({content:c,active:true});
+    editMsgs.push({content:c, active:true, is_embed:isE, embed_color:col, media_url:url});
     document.getElementById('new-msg').value='';
     renderMsgs();
   }
@@ -1076,7 +1130,7 @@ async function saveGroup(){
     }else{
       g=await api('POST','/groups',{name,description:desc});
       for(const m of editMsgs.filter(x=>!x.id)){
-        await api('POST',`/groups/${g.id}/messages`,{content:m.content});
+        await api('POST',`/groups/${g.id}/messages`,{content:m.content, is_embed:m.is_embed, embed_color:m.embed_color, media_url:m.media_url});
       }
     }
     closeModal('modal-group');
@@ -1141,24 +1195,19 @@ async function loadUpcoming(){
 async function loadSentHistory(){
   const el=document.getElementById('sent-list');
   try{
-    const data=await api('GET','/sent_history?limit=30');
+    const data=await api('GET','/logs_db?limit=30');
     if(!data.length){
       el.innerHTML='<div class="empty"><div class="empty-ico">\u{1F4EB}</div>Nenhum envio registrado ainda.</div>';
       return;
     }
     el.innerHTML=data.map(function(r){
-      var key=r.key;
-      var parts=key.split('_sent_');
-      var taskPart=parts[0];
-      var timePart=parts[1]||'';
-      var date='';
-      var time='';
-      if(timePart.length>=8) date=timePart.slice(0,4)+'-'+timePart.slice(4,6)+'-'+timePart.slice(6,8);
-      if(timePart.length>=13) time=timePart.slice(9,11)+':'+timePart.slice(11,13);
-      var taskId=taskPart.replace('task_','');
-      var task=tasks.find(function(t){return String(t.id)===taskId;});
-      var taskName=task?task.name:'Task #'+taskId;
-      return '<div class="sent-item"><b>'+esc(taskName)+'</b> \u2014 '+date+(time?' \xe0s '+time:'')+'</div>';
+      let date_str = '';
+      if(r.created_at){
+        const d = new Date(r.created_at + 'Z');
+        date_str = d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+      }
+      var badge = r.status==='SUCCESS'?'<span class="badge bg-gr">OK</span>':'<span class="badge bg-rd" title="'+esc(r.error_msg)+'">ERRO</span>';
+      return '<div class="sent-item"><b>'+esc(r.task_name)+'</b> '+badge+' \u2014 '+date_str+'</div>';
     }).join('');
   }catch(e){
     el.innerHTML='<div class="empty" style="color:var(--rd)">Erro ao carregar</div>';

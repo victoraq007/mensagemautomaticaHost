@@ -3,7 +3,7 @@ import json, random, datetime, asyncio
 from discord.ext import tasks, commands
 from config import TIMEZONE
 from database import get_session
-from models import Settings, TaskConfig, MessageGroup
+from models import Settings, TaskConfig, MessageGroup, TaskExecutionLog
 from logger_setup import make_logger, purge_old_logs
 
 _bot_ref = None
@@ -83,7 +83,12 @@ def _active_tasks_as_dicts():
             if t.message_group_id:
                 g = s.query(MessageGroup).filter_by(id=t.message_group_id).first()
                 if g:
-                    msgs = [m.content for m in g.messages if m.active]
+                    msgs = [{
+                        "content": m.content,
+                        "is_embed": getattr(m, "is_embed", False),
+                        "embed_color": getattr(m, "embed_color", ""),
+                        "media_url": getattr(m, "media_url", "")
+                    } for m in g.messages if m.active]
             try:
                 schedule_config = json.loads(t.schedule_config or "{}")
             except (ValueError, TypeError):
@@ -95,6 +100,7 @@ def _active_tasks_as_dicts():
                 "test_mode":       bool(t.test_mode),
                 "active":          bool(t.active),
                 "channel_ids":     t.channel_ids or "",
+                "roles_to_mention":getattr(t, "roles_to_mention", ""),
                 "schedule_config": schedule_config,
                 "messages":        msgs,
             })
@@ -190,11 +196,19 @@ class TasksCog(commands.Cog):
     async def daily_maintenance(self):
         logs_removed = purge_old_logs()
         settings_removed = _purge_old_settings(days=90)
+        db_logs_removed = 0
+        try:
+            with get_session() as s:
+                cutoff = now_utc() - datetime.timedelta(days=30)
+                db_logs_removed = s.query(TaskExecutionLog).filter(TaskExecutionLog.created_at < cutoff).delete()
+        except Exception as e:
+            self.tlog.error(f"Erro ao limpar TaskExecutionLog: {e}")
+
         self._sched_times.clear()
         _refresh_channels(self.bot)
         self.tlog.info(
-            f"Manutenção: {logs_removed} log(s) removido(s), "
-            f"{settings_removed} settings antigo(s) removido(s), canais atualizados."
+            f"Manutenção: {logs_removed} log(s) de arquivo removido(s), "
+            f"{settings_removed} settings antigo(s), {db_logs_removed} db logs removidos, canais atualizados."
         )
 
     @daily_maintenance.before_loop
@@ -207,8 +221,8 @@ class TasksCog(commands.Cog):
         last  = self._test_last.get(task["id"])
         if last and (now - last).total_seconds() < every * 60:
             return
-        msg = self._pick(task) or f"[TESTE] Task '{task['name']}' — {now.strftime('%H:%M:%S')}"
-        await self._send(task, f"🧪 **[MODO TESTE]** {msg}")
+        msg = self._pick(task) or {"content": f"[TESTE] Task '{task['name']}' — {now.strftime('%H:%M:%S')}"}
+        await self._send(task, msg, True)
         self._test_last[task["id"]] = now
         self.tlog.info(f"[TEST] task_id={task['id']} nome={task['name']} enviada.")
 
@@ -313,21 +327,101 @@ class TasksCog(commands.Cog):
         self.tlog.info(f"[monthly] task_id={task['id']} mês={cur}")
 
     # ── Envio ─────────────────────────────────────────────────────────────────
-    async def _send(self, task, message):
-        # Discord limita 2000 chars — truncar se necessário
-        if len(message) > 2000:
-            message = message[:1997] + "..."
+    def _format_message_text(self, text: str, now, ch) -> str:
+        dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        t = text
+        t = t.replace("{hoje}", now.strftime('%d/%m/%Y'))
+        t = t.replace("{hora}", now.strftime('%H:%M'))
+        t = t.replace("{dia_semana}", dias_semana[now.weekday()])
+        if ch:
+            t = t.replace("{canal}", f"<#{ch.id}>")
+        return t
+
+    def _get_roles_prefix(self, task) -> str:
+        roles_str = task.get("roles_to_mention", "")
+        if not roles_str:
+            return ""
+        mentions = []
+        for r in roles_str.split(","):
+            r = r.strip()
+            if r:
+                mentions.append(f"<@&{r}>")
+        return " ".join(mentions) + "\n" if mentions else ""
+
+    async def _send(self, task, message_dict, is_test=False):
+        import discord
+        now = now_tz()
+        roles_prefix = self._get_roles_prefix(task)
+
         for cid in _get_channel_ids(task):
             ch = self.bot.get_channel(cid)
+            status = "ERROR"
+            error_msg = ""
             if ch:
                 try:
-                    await ch.send(message)
+                    raw_content = message_dict.get("content", "")
+                    content = self._format_message_text(raw_content, now, ch)
+                    if is_test:
+                        content = f"🧪 **[MODO TESTE]**\n{content}"
+
+                    full_content = roles_prefix + content
+                    if len(full_content) > 2000:
+                        full_content = full_content[:1997] + "..."
+
+                    kwargs = {"content": full_content}
+
+                    if message_dict.get("is_embed"):
+                        color_hex = message_dict.get("embed_color", "")
+                        color_val = discord.Color.default()
+                        if color_hex and color_hex.startswith("#"):
+                            try:
+                                color_val = discord.Color(int(color_hex[1:], 16))
+                            except ValueError:
+                                pass
+                        
+                        # Movemos o content principal para a description do Embed (opcional)
+                        # ou mantemos o content normal e enviamos um Embed com a imagem.
+                        emb = discord.Embed(description=content, color=color_val)
+                        if is_test:
+                            emb.title = "🧪 [MODO TESTE]"
+                        
+                        media_url = message_dict.get("media_url", "")
+                        if media_url:
+                            emb.set_image(url=media_url)
+                        
+                        # enviamos mentions + content vazio no message body se o texto estiver no embed
+                        # ou mentions sozinhos, para pifar a notificacao
+                        kwargs["content"] = roles_prefix
+                        kwargs["embed"] = emb
+
+                    await ch.send(**kwargs)
+                    status = "SUCCESS"
                     self.tlog.info(f"task_id={task['id']} canal={cid} enviado OK")
-                    print(f"[BOT] task={task['name']} → #{ch.name} → '{message[:60]}'")
+                    print(f"[BOT] task={task['name']} → #{ch.name} → SUCCESS")
                 except Exception as e:
+                    status = "ERROR"
+                    error_msg = str(e)
                     self.tlog.exception(f"task_id={task['id']} canal={cid} erro: {e}")
             else:
+                status = "ERROR"
+                error_msg = "Canal não encontrado"
                 self.tlog.error(f"task_id={task['id']} canal={cid} não encontrado")
+
+            # Salvar execution log (ignorar tests)
+            if not is_test:
+                try:
+                    with get_session() as s:
+                        log = TaskExecutionLog(
+                            task_id=task["id"],
+                            task_name=task["name"],
+                            channel_id=str(cid),
+                            status=status,
+                            error_msg=error_msg,
+                            created_at=now_utc()
+                        )
+                        s.add(log)
+                except Exception as db_e:
+                    self.tlog.error(f"Erro ao salvar TaskExecutionLog: {db_e}")
 
     async def _send_alert(self, message: str):
         """Envia alerta num canal de monitoramento se ALERT_CHANNEL_ID estiver definido."""

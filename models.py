@@ -29,6 +29,9 @@ class Message(Base):
     id         = Column(Integer, primary_key=True)
     group_id   = Column(Integer, ForeignKey("message_groups.id"), nullable=False)
     content    = Column(Text, nullable=False)
+    is_embed   = Column(Boolean, default=False)
+    embed_color= Column(String(50), default="")
+    media_url  = Column(String(500), default="")
     active     = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     group = relationship("MessageGroup", back_populates="messages")
@@ -60,6 +63,7 @@ class TaskConfig(Base):
     description      = Column(Text, default="")
     type             = Column(String(50), nullable=False)
     channel_ids      = Column(Text, nullable=False)
+    roles_to_mention = Column(Text, default="")
     message_group_id = Column(Integer, ForeignKey("message_groups.id"), nullable=True)
     schedule_config  = Column(Text, default="{}")
     active           = Column(Boolean, default=True)
@@ -70,3 +74,22 @@ class TaskConfig(Base):
 
     def get_channel_ids(self):
         return [int(x.strip()) for x in self.channel_ids.split(",") if x.strip()]
+
+    def get_role_ids(self):
+        if not self.roles_to_mention:
+            return []
+        return [x.strip() for x in self.roles_to_mention.split(",") if x.strip()]
+
+
+class TaskExecutionLog(Base):
+    """
+    Log de execução de tarefas, mantido por 30 dias para não inflar o DB.
+    """
+    __tablename__ = "task_execution_logs"
+    id          = Column(Integer, primary_key=True)
+    task_id     = Column(Integer, ForeignKey("task_configs.id", ondelete="CASCADE"), nullable=False)
+    task_name   = Column(String(200), nullable=False)
+    channel_id  = Column(String(100), nullable=False)
+    status      = Column(String(50), nullable=False)  # "SUCCESS", "ERROR"
+    error_msg   = Column(Text, default="")
+    created_at  = Column(DateTime, default=datetime.datetime.utcnow)
