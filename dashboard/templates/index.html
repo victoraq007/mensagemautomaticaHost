@@ -346,6 +346,10 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/><line x1="7" y1="13" x2="10" y2="13"/></svg>
         Logs
       </button>
+      <button class="ni" onclick="showV('help',this)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><line x1="10" y1="14" x2="10" y2="14"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg>
+        Como Usar
+      </button>
     </nav>
     <div class="sf">
       <div><span class="dot"></span><span>dashboard online</span></div>
@@ -426,6 +430,39 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
         </div>
       </div>
 
+      <!-- HELP / COMO USAR -->
+      <div class="panel" id="v-help">
+        <div class="card" style="padding: 24px; font-size: 13px; line-height: 1.6; color: var(--t);">
+          <h2 style="font-size: 18px; margin-bottom: 12px; color: var(--t);">📚 Como usar o Bot Avisos</h2>
+          
+          <p style="margin-bottom: 16px;">O painel funciona dividindo as mensagens em <strong>Tarefas (Tasks)</strong> e <strong>Grupos de Mensagens</strong>. Isso permite que você crie um rodízio dinâmico de textos para os mesmos avisos.</p>
+          
+          <h3 style="font-size: 15px; margin-top: 24px; margin-bottom: 10px; color: var(--t);">1. Grupos de Mensagens</h3>
+          <p style="margin-bottom: 12px;">Os grupos são onde você escreve o conteúdo real do que o bot vai falar.</p>
+          <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 16px; color: var(--t2);">
+            <li style="margin-bottom: 6px;">Crie um grupo (ex: <kbd style="background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--b2);">Lembretes de Ponto</kbd>).</li>
+            <li style="margin-bottom: 6px;">Dentro dele, repita o botão <strong>+ Adicionar Mensagem</strong> e crie variações. Exemplo 1: <em>"Fala galera, hora de bater o ponto!"</em> — Exemplo 2: <em>"Não se esqueçam do ponto hoje!"</em>.</li>
+            <li style="margin-bottom: 6px;"><strong>Variáveis automáticas:</strong> Você pode usar as palavras <code style="color:var(--ac);">{hoje}</code>, <code style="color:var(--ac);">{hora}</code>, <code style="color:var(--ac);">{dia_semana}</code> e <code style="color:var(--ac);">{canal}</code> dentro do texto da mensagem. O bot calculará esses códigos pelos valores reais no instante exato do envio!</li>
+            <li style="margin-bottom: 6px;"><strong>Rich Embeds:</strong> Marque a caixinha de "Usar Rich Embed" e informe uma cor hexadecimal (ex: #FF0000) se quiser que a sua mensagem enviada fique com o painel lateral elegante em vez de texto chato/plano.</li>
+          </ul>
+
+          <h3 style="font-size: 15px; margin-top: 24px; margin-bottom: 10px; color: var(--t);">2. Tasks (Agendamentos)</h3>
+          <p style="margin-bottom: 12px;">As Tasks conectam Onde/Quem com o que vai ser enviado e Quando.</p>
+          <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 16px; color: var(--t2);">
+            <li style="margin-bottom: 6px;">Vá em <strong>Tasks -> Novo</strong>. </li>
+            <li style="margin-bottom: 6px;">Selecione os canais do Discord desejados (você pode selecionar mais de um), e pesquise pelos <strong>Cargos</strong> se você quer garantir que as pessoas sejam pingadas (alertadas nativamente).</li>
+            <li style="margin-bottom: 6px;">No campo <strong>Grupo de Mensagem</strong>, selecione o grupo que você recheou no passo anterior.</li>
+            <li style="margin-bottom: 6px;">Selezione o tipo de rotina de agendamento desejado (Diária, Semanal, Horário fixo etc).</li>
+            <li style="margin-bottom: 6px;"><strong>Para testar agora mesmo:</strong> Ligue o <strong>Modo Teste 🧪</strong>! Ele ignorará seus agendamentos para forçar que o robô envie aquela notificação a cada 2 minutos (Cuidado para não flodar o servidor).</li>
+          </ul>
+          
+          <div style="background: var(--bg3); border-left: 4px solid var(--ac); padding: 14px; border-radius: var(--r); margin-top: 24px;">
+            <strong style="color: var(--t);">💡 Como funciona o rodízio do bot?</strong><br>
+            <span style="color: var(--t2);">Sempre que uma Task programada acordar no relógio, o Bot vai olhar para o <em>Grupo de Mensagem</em> atrelado e vai <strong>escolher 1 mensagem aleatória</strong> dentre as ativas lá. Assim, dependendo de quantas você botar no grupo, as notificações sempre parecerão ter sido dadas por um humano em tempo real.</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -484,6 +521,15 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <select class="fs" id="t-group"><option value="">— nenhum —</option></select>
     </div>
 
+    <!-- Pick Mode -->
+    <div class="fg" style="margin-top:14px">
+      <label class="fl" for="t-pick-mode">Modo de Rotação das Mensagens do Grupo</label>
+      <select class="fs" id="t-pick-mode" data-s="pick_mode">
+        <option value="random">Sorteio Aleatório a cada disparo</option>
+        <option value="sequential">Acompanhar a ordem cadastradas na lista (Sequencial)</option>
+      </select>
+    </div>
+
     <!-- Modo teste -->
     <div class="fg" style="display:flex;align-items:center;gap:12px;background:var(--am-bg);border:1px solid rgba(217,119,6,.25);border-radius:var(--r);padding:11px 13px">
       <label class="tog">
@@ -535,7 +581,10 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
         <textarea class="fta" id="new-msg" placeholder="Texto (variáveis permitidas: {hoje}, {hora}, {dia_semana}, {canal})" style="min-height:54px;margin-bottom:8px"></textarea>
         <label class="fl" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="new-is-embed"> Usar Rich Embed no envio</label>
         <div class="fr" style="margin-top:6px; margin-bottom:8px">
-          <input class="fi" id="new-embed-color" placeholder="Cor HEX (ex: #ff0000)">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="color" class="fi" id="new-embed-color" value="#ffffff" style="width:40px; height:38px; padding:2px; cursor:pointer;" title="Escolher cor da borda do Embed">
+            <span style="font-size:11px; color:var(--t2);">Cor do Embed</span>
+          </div>
           <input class="fi" id="new-media-url" placeholder="URL de Imagem (opcional)">
         </div>
         <button class="btn bg-b" style="width:100%" onclick="addMsg()">+ Adicionar Mensagem</button>
@@ -679,7 +728,7 @@ function showV(v,el){
   document.getElementById('v-'+v).classList.add('on');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
   el.classList.add('on');
-  document.getElementById('pt').textContent={tasks:'Tasks Agendadas',groups:'Grupos de Mensagens'}[v];
+  document.getElementById('pt').textContent={tasks:'Tasks Agendadas',groups:'Grupos de Mensagens',monitor:'Monitoramento',logs:'Logs',help:'Como Usar'}[v];
   closeSidebar();
 }
 function openNew(){curView==='tasks'?openTaskModal():openGroupModal();}
@@ -865,6 +914,8 @@ function openTaskModal(id){
   document.getElementById('t-name').value=t?.name||'';
   document.getElementById('t-desc').value=t?.description||'';
   document.getElementById('t-type').value=t?.type||'weekly';
+  const pickEl = document.getElementById('t-pick-mode');
+  if (pickEl) pickEl.value = t?.schedule_config?.pick_mode || 'random';
   document.getElementById('t-testmode').checked=!!t?.test_mode;
   document.getElementById('ch-search').value='';
   document.getElementById('r-search').value='';

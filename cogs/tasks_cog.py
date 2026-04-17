@@ -438,4 +438,23 @@ class TasksCog(commands.Cog):
 
     def _pick(self, task):
         msgs = task.get("messages", [])
-        return random.choice(msgs) if msgs else None
+        if not msgs: return None
+        
+        cfg = task.get("schedule_config", {})
+        pick_mode = cfg.get("pick_mode", "random")
+        
+        if pick_mode == "sequential":
+            task_id = task.get("id")
+            key = f"task_{task_id}_seq_idx"
+            idx_str = _get(key, "0")
+            try:
+                idx = int(idx_str)
+            except ValueError:
+                idx = 0
+            
+            idx = idx % len(msgs)
+            chosen = msgs[idx]
+            _set(key, str(idx + 1))
+            return chosen
+            
+        return random.choice(msgs)
