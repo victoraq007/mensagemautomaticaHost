@@ -180,6 +180,29 @@ def create_app() -> Flask:
         except Exception:
             return jsonify([])
 
+    @app.route("/api/stats")
+    @login_required
+    def get_stats():
+        """Retorna indicadores-chave do painel."""
+        try:
+            with get_session() as s:
+                tasks_ativas = s.query(TaskConfig).filter_by(active=True).count()
+                grupos = s.query(MessageGroup).count()
+                envios_ok = s.query(TaskExecutionLog).filter_by(status="SUCCESS").count()
+                envios_err = s.query(TaskExecutionLog).filter_by(status="ERROR").count()
+                
+                return jsonify({
+                    "active_tasks": tasks_ativas,
+                    "total_groups": grupos,
+                    "sent_success": envios_ok,
+                    "sent_errors": envios_err
+                })
+        except Exception:
+            return jsonify({
+                "active_tasks": 0, "total_groups": 0,
+                "sent_success": 0, "sent_errors": 0
+            })
+
     # ── API — Grupos ──────────────────────────────────────────────────────────
     @app.route("/api/groups", methods=["GET"])
     @login_required

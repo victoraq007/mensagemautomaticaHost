@@ -330,7 +330,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <div class="logo-s">painel de controle</div>
     </div>
     <nav class="nav">
-      <button class="ni on" onclick="showV('tasks',this)">
+      <button class="ni" onclick="showV('tasks',this)">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10l2 2 4-4"/></svg>
         Tasks
       </button>
@@ -338,9 +338,9 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h14M3 10h14M3 14h8"/></svg>
         Grupos de Mensagens
       </button>
-      <button class="ni" onclick="showV('monitor',this)">
+      <button class="ni on" onclick="showV('monitor',this)">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="7"/><polyline points="10,6 10,10 13,13"/></svg>
-        Monitor
+        Monitoramento
       </button>
       <button class="ni" onclick="showV('logs',this)">
         <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="7" y1="7" x2="13" y2="7"/><line x1="7" y1="10" x2="13" y2="10"/><line x1="7" y1="13" x2="10" y2="13"/></svg>
@@ -363,7 +363,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()">
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14" x2="17" y2="14"/></svg>
       </button>
-      <span class="pt" id="pt">Tasks Agendadas</span>
+      <span class="pt" id="pt">Monitoramento</span>
       <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Alternar tema">🌙</button>
       <button class="btn bg-b sm" onclick="reloadChannels()" title="Recarregar canais">
         <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10a6 6 0 1 1 1.5 4"/><path d="M4 14v-4H8"/></svg>
@@ -376,7 +376,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
     </div>
 
     <div class="content">
-      <div class="panel on" id="v-tasks">
+      <div class="panel" id="v-tasks">
         <div class="card" id="tasks-list"><div class="empty"><div class="empty-ico">⏳</div>Carregando...</div></div>
       </div>
       <div class="panel" id="v-groups">
@@ -384,7 +384,40 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       </div>
 
       <!-- MONITOR -->
-      <div class="panel" id="v-monitor">
+      <div class="panel on" id="v-monitor">
+        
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:16px;margin-bottom:16px">
+          <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px">
+            <div style="font-size:28px">⏳</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;color:var(--t)" id="kpi-tasks">...</div>
+              <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px">Tasks Ativas</div>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px">
+            <div style="font-size:28px">📂</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;color:var(--t)" id="kpi-groups">...</div>
+              <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px">Grupos</div>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px">
+            <div style="font-size:28px">✅</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;color:var(--ac)" id="kpi-success">...</div>
+              <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px">Sucessos</div>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;display:flex;align-items:center;gap:16px">
+            <div style="font-size:28px">⚠️</div>
+            <div>
+              <div style="font-size:22px;font-weight:700;color:var(--am)" id="kpi-errors">...</div>
+              <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px">Falhas</div>
+            </div>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px" class="monitor-grid">
           <!-- Próximas execuções -->
           <div class="card">
@@ -433,21 +466,59 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
       <!-- HELP / COMO USAR -->
       <div class="panel" id="v-help">
         <div class="card" style="padding: 24px; font-size: 13px; line-height: 1.6; color: var(--t);">
-          <h2 style="font-size: 18px; margin-bottom: 12px; color: var(--t);">📚 Como usar o Bot Avisos</h2>
+          <h2 style="font-size: 18px; margin-bottom: 12px; color: var(--t);">📚 Manual Definitivo: Bot Avisos</h2>
+          <p style="margin-bottom: 24px;">Este painel profissional divide a lógica entre <strong style="color:var(--ac)">O que vai ser enviado (Grupos)</strong> e <strong style="color:var(--ac)">Quando e para Onde enviar (Tasks)</strong>. Vamos mergulhar em todos os recursos que você possui em mãos:</p>
           
-          <p style="margin-bottom: 16px;">O painel funciona dividindo as mensagens em <strong>Tarefas (Tasks)</strong> e <strong>Grupos de Mensagens</strong>. Isso permite que você crie um rodízio dinâmico de textos para os mesmos avisos.</p>
-          
-          <h3 style="font-size: 15px; margin-top: 24px; margin-bottom: 10px; color: var(--t);">1. Grupos de Mensagens</h3>
-          <p style="margin-bottom: 12px;">Os grupos são onde você escreve o conteúdo real do que o bot vai falar.</p>
-          <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 16px; color: var(--t2);">
-            <li style="margin-bottom: 6px;">Crie um grupo (ex: <kbd style="background:var(--bg3);padding:2px 6px;border-radius:4px;border:1px solid var(--b2);">Lembretes de Ponto</kbd>).</li>
-            <li style="margin-bottom: 6px;">Dentro dele, repita o botão <strong>+ Adicionar Mensagem</strong> e crie variações. Exemplo 1: <em>"Fala galera, hora de bater o ponto!"</em> — Exemplo 2: <em>"Não se esqueçam do ponto hoje!"</em>.</li>
-            <li style="margin-bottom: 6px;"><strong>Variáveis automáticas:</strong> Você pode usar as palavras <code style="color:var(--ac);">{hoje}</code>, <code style="color:var(--ac);">{hora}</code>, <code style="color:var(--ac);">{dia_semana}</code> e <code style="color:var(--ac);">{canal}</code> dentro do texto da mensagem. O bot calculará esses códigos pelos valores reais no instante exato do envio!</li>
-            <li style="margin-bottom: 6px;"><strong>Rich Embeds:</strong> Marque a caixinha de "Usar Rich Embed" e informe uma cor hexadecimal (ex: #FF0000) se quiser que a sua mensagem enviada fique com o painel lateral elegante em vez de texto chato/plano.</li>
+          <h3 style="font-size: 16px; margin-top: 32px; margin-bottom: 12px; font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--b);">1. Cadastrando o Conteúdo: Grupos e Mensagens</h3>
+          <p style="margin-bottom: 12px;">Grupos são coleções de textos / cards. O seu bot usará esse grupo como repertório.</p>
+          <ul style="margin-left: 20px; list-style-type: square; margin-bottom: 20px; color: var(--t2);">
+            <li style="margin-bottom: 8px;">Crie um grupo em `Grupos de Mensagem > Novo` (ex: <em>Avisos de Ponto</em>).</li>
+            <li style="margin-bottom: 8px;">Escreva uma frase e adicione. Você pode criar várias mensagens dentro do mesmo grupo! Isso evitará que o bot pareça um "robô repetitivo" todos os dias.</li>
           </ul>
 
-          <h3 style="font-size: 15px; margin-top: 24px; margin-bottom: 10px; color: var(--t);">2. Tasks (Agendamentos)</h3>
-          <p style="margin-bottom: 12px;">As Tasks conectam Onde/Quem com o que vai ser enviado e Quando.</p>
+          <div style="background:var(--bg3); padding:16px; border-radius:var(--r2); border:1px solid var(--b2); margin-left:14px; margin-bottom:24px;">
+            <strong style="color:var(--p); display:block; margin-bottom:8px">🎨 FORMATANDO MENSAGENS (RICH EMBEDS):</strong>
+            <p style="color:var(--t2); margin-bottom:8px;">Se você usar Apenas Texto, a mensagem vai normal. Se quiser entregar um visual corporativo elegante:</p>
+            <ul style="margin-left: 14px; list-style-type: circle; color: var(--t2);">
+              <li>Marque a caixa <b>"Usar Rich Embed no envio"</b>.</li>
+              <li>Aparecerá um seletor de cores, clique nele e escolha qual cor preencherá a barra vertical da notificação.</li>
+              <li>Você pode colar uma URL pública de imagem que será anexada no fundo do seu aviso. (Formatos .png / .jpg de preferência).</li>
+            </ul>
+          </div>
+          
+          <div style="background:var(--am-bg); padding:16px; border-radius:var(--r2); border:1px solid rgba(217,119,6,.25); margin-left:14px; margin-bottom:24px;">
+            <strong style="color:var(--am); display:block; margin-bottom:8px">✨ VARIÁVEIS DINÂMICAS E INVISÍVEIS:</strong>
+            <p style="color:var(--t2); margin-bottom:8px;">Dentro do texto da sua mensagem, cole um dos códigos chaves descritos abaixo. O bot detectará e vai substituir pela informação verdadeira de hora/dia do envio.</p>
+            <ul style="margin-left: 14px; list-style-type: none; color: var(--t2); display:flex; flex-direction:column; gap:6px;">
+              <li><code style="background:var(--b); color:var(--t); padding:2px 6px; border-radius:4px; font-weight:700">{hoje}</code> — Substitui por: 01/12/2026</li>
+              <li><code style="background:var(--b); color:var(--t); padding:2px 6px; border-radius:4px; font-weight:700">{hora}</code> — Substitui por: 14:30</li>
+              <li><code style="background:var(--b); color:var(--t); padding:2px 6px; border-radius:4px; font-weight:700">{dia_semana}</code> — Substitui por: Quarta-feira</li>
+              <li><code style="background:var(--b); color:var(--t); padding:2px 6px; border-radius:4px; font-weight:700">{canal}</code> — Substitui pelo nome azul e clicável do Chat no Discord (<span style="color:#5865F2">#geral</span>).</li>
+            </ul>
+          </div>
+          
+
+          <h3 style="font-size: 16px; margin-top: 32px; margin-bottom: 12px; font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--b);">2. Conectando tudo nas "Tasks" (Agendamentos)</h3>
+          <p style="margin-bottom: 12px;">As Tasks são as ordens de execução reais.</p>
+          <ul style="margin-left: 20px; list-style-type: square; margin-bottom: 16px; color: var(--t2);">
+            <li style="margin-bottom: 8px;"><strong>Canais simultâneos:</strong> Você pode selecionar múltiplos canais de uma vez. O bot disparará em todos ao mesmo tempo.</li>
+            <li style="margin-bottom: 8px;"><strong>Notificando Cargos (@Roles):</strong> Basta pesquisar o nome dos Cargos do seu Discord e marcar. Eles receberão um "ping / push notificado" junto do conteúdo.</li>
+            <li style="margin-bottom: 8px;">Você então vincula ao <strong style="color:var(--t)">Grupo de Mensagens</strong> configurado anteriormente.</li>
+          </ul>
+
+          <div style="background:var(--bg3); padding:16px; border-radius:var(--r2); border-left: 4px solid var(--ac); margin-bottom:24px;">
+            <strong style="color:var(--t); font-size:14px;">🔄 Modo de Rotação (Sorteio Aleatório x Sequencial)</strong>
+            <p style="color:var(--t2); margin-top:8px;">Se um grupo possui 5 mensagens distintas, o que o bot deve enviar hoje e amanhã?<br><br><b>» Aleatório:</b> Ele atira a Mão dentro da urna das 5 mensagens e puxa uma aleatoriamente.<br><b>» Sequencial:</b> Ele pega a #1. Salva matematicamente no banco secreto aonde ele parou, e no próximo disparo de amanhã ele forçosamente enviará a #2, e assim por diante. Ao chegar no fim, ele não para, reinicia da #1 garantindo a repetição cíclica perfeita!</p>
+          </div>
+          
+          <h3 style="font-size: 16px; margin-top: 32px; margin-bottom: 12px; font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--b);">3. Rotina e Testes Rigeosos</h3>
+          <ul style="margin-left: 20px; list-style-type: square; margin-bottom: 16px; color: var(--t2);">
+            <li style="margin-bottom: 8px;">O banco de dados limpa inteligentemente relatórios antigos com mais de +30 dias sozinho todo amanhecer para evitar travamentos de uso de memória.</li>
+            <li style="margin-bottom: 8px;"><strong>LABORATÓRIO (Modo Teste):</strong> Caso queira validar se suas marcações de cargos ou cores funcionaram perfeitamente no servidor: Ative a opção 🧪 Modo Teste lá no final da tela de Criação da Task. Isso anulará qualquer calendário configurado e ordenará o bot a disparar a mensagem a cada 2 minutos (Cuidado para não floodar canais principais).</li>
+          </ul>
+          
+        </div>
+      </div>
           <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 16px; color: var(--t2);">
             <li style="margin-bottom: 6px;">Vá em <strong>Tasks -> Novo</strong>. </li>
             <li style="margin-bottom: 6px;">Selecione os canais do Discord desejados (você pode selecionar mais de um), e pesquise pelos <strong>Cargos</strong> se você quer garantir que as pessoas sejam pingadas (alertadas nativamente).</li>
@@ -622,7 +693,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
 
 // ── Estado global ─────────────────────────────────────────────────────────
 let tasks=[], groups=[], channels=[], roles=[], selChannels=new Set(), selRoles=new Set(), editMsgs=[];
-let curView='tasks';
+let curView='monitor';
 let deferredPrompt=null;
 let _saving=false; // lock anti-double-submit
 
@@ -637,6 +708,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadAll();
   reloadChannels();
   renderSched();
+  if (curView === 'monitor') loadMonitor();
   // fechar modal com Escape
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){
@@ -1223,6 +1295,13 @@ function esc(s){
 
 // ── Monitor ─────────────────────────────────────────────────────────────
 async function loadMonitor(){
+  try {
+    const st = await api('GET', '/stats');
+    document.getElementById('kpi-tasks').textContent = st.active_tasks || 0;
+    document.getElementById('kpi-groups').textContent = st.total_groups || 0;
+    document.getElementById('kpi-success').textContent = st.sent_success || 0;
+    document.getElementById('kpi-errors').textContent = st.sent_errors || 0;
+  } catch(e) {}
   await Promise.all([loadUpcoming(), loadSentHistory()]);
 }
 
