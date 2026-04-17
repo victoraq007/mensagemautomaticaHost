@@ -191,6 +191,13 @@ class TasksCog(commands.Cog):
         self.tlog.info("Dispatcher iniciado.")
         print("[BOT] Dispatcher iniciado.")
 
+    @dispatcher.error
+    async def dispatcher_error(self, exc):
+        self.tlog.critical(f"DISPATCHER ENGINE MORTO / CONGELADO: {exc}")
+        self.tlog.warning("Auto-Cura acionada. Reiniciando engine do Dispatcher em 15 segundos...")
+        await asyncio.sleep(15)
+        self.dispatcher.restart()
+
     # ── Manutenção diária ─────────────────────────────────────────────────────
     @tasks.loop(hours=24)
     async def daily_maintenance(self):
