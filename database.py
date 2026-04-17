@@ -14,7 +14,30 @@ engine = create_engine(
     connect_args={"check_same_thread": False},  # necessário para SQLite com múltiplas threads
 )
 
+from sqlalchemy import text, inspect
+
+def auto_migrate(engine):
+    """
+    Verificador de integridade do Banco:
+    O SQLite não faz ALTER TABLE automático com create_all(), portanto esta função injeta as alterações estruturais que 
+    sofreram update, permitindo sistema livre de manutenção manual.
+    """
+    inspector = inspect(engine)
+    tables = inspector.get_table_names()
+    with engine.begin() as conn:
+        if "messages" in tables:
+            cols = [c["name"] for c in inspector.get_columns("messages")]
+            if "is_embed" not in cols:    conn.execute(text("ALTER TABLE messages ADD COLUMN is_embed BOOLEAN DEFAULT 0"))
+            if "embed_color" not in cols: conn.execute(text("ALTER TABLE messages ADD COLUMN embed_color VARCHAR(50) DEFAULT ''"))
+            if "media_url" not in cols:   conn.execute(text("ALTER TABLE messages ADD COLUMN media_url VARCHAR(500) DEFAULT ''"))
+        
+        if "task_configs" in tables:
+            cols = [c["name"] for c in inspector.get_columns("task_configs")]
+            if "test_mode" not in cols:        conn.execute(text("ALTER TABLE task_configs ADD COLUMN test_mode BOOLEAN DEFAULT 0"))
+            if "roles_to_mention" not in cols: conn.execute(text("ALTER TABLE task_configs ADD COLUMN roles_to_mention VARCHAR(500) DEFAULT ''"))
+
 Base.metadata.create_all(engine)
+auto_migrate(engine)
 
 # scoped_session garante uma sessão por thread — seguro para uso com asyncio + Flask
 SessionFactory = sessionmaker(bind=engine)
