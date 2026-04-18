@@ -1,5 +1,6 @@
 # cogs/tasks_cog.py
 import json, random, datetime, asyncio
+import discord
 from discord.ext import tasks, commands
 from config import TIMEZONE
 from database import get_session
