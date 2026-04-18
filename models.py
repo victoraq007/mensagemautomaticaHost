@@ -66,6 +66,8 @@ class TaskConfig(Base):
     roles_to_mention = Column(Text, default="")
     message_group_id = Column(Integer, ForeignKey("message_groups.id"), nullable=True)
     schedule_config  = Column(Text, default="{}")
+    send_dm          = Column(Boolean, default=False)
+    target_users     = Column(Text, default="")
     active           = Column(Boolean, default=True)
     test_mode        = Column(Boolean, default=False)
     created_at       = Column(DateTime, default=datetime.datetime.utcnow)
@@ -93,3 +95,16 @@ class TaskExecutionLog(Base):
     status      = Column(String(50), nullable=False)  # "SUCCESS", "ERROR"
     error_msg   = Column(Text, default="")
     created_at  = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class MessageReadLog(Base):
+    """
+    Registra os cliques no botão "Confirmar Leitura" quando as mensagens
+    são enviadas via Mensagem Direta (DM).
+    """
+    __tablename__ = "message_read_logs"
+    id          = Column(Integer, primary_key=True)
+    task_id     = Column(Integer, ForeignKey("task_configs.id", ondelete="CASCADE"), nullable=False)
+    user_id     = Column(String(50), nullable=False)
+    user_name   = Column(String(100), nullable=False)
+    read_at     = Column(DateTime, default=datetime.datetime.utcnow)

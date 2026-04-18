@@ -24,11 +24,19 @@ def alter_table():
     try:
         # TaskConfig table
         cursor.execute("ALTER TABLE task_configs ADD COLUMN roles_to_mention TEXT DEFAULT ''")
-        print("Tabela task_configs alterada com sucesso!")
+        print("Tabela task_configs (roles_to_mention) alterada!")
     except sqlite3.OperationalError as e:
-        print(f"Ignorando ou erro na tabela task_configs: {e}")
+        print(f"Ignorando ou erro na tabela task_configs roles: {e}")
 
-    # Tabela task_execution_logs sera criada automaticamente pelo Base.metadata.create_all
+    try:
+        # TaskConfig table - Nova atualização DM
+        cursor.execute("ALTER TABLE task_configs ADD COLUMN send_dm BOOLEAN DEFAULT 0")
+        cursor.execute("ALTER TABLE task_configs ADD COLUMN target_users TEXT DEFAULT ''")
+        print("Tabela task_configs (DMs) alterada com sucesso!")
+    except sqlite3.OperationalError as e:
+        print(f"Ignorando ou erro na tabela task_configs DMs: {e}")
+
+    # Tabelas task_execution_logs e message_read_logs serão criadas automaticamente pelo Base.metadata.create_all
 
     conn.commit()
     conn.close()

@@ -114,6 +114,23 @@ def create_app() -> Flask:
         except Exception:
             return jsonify([])
 
+    @app.route("/api/users")
+    @login_required
+    def list_users():
+        try:
+            from cogs.tasks_cog import _bot_ref
+            if not _bot_ref: return jsonify([])
+            users_set = {}
+            for guild in _bot_ref.guilds:
+                for member in guild.members:
+                    if not member.bot:
+                        users_set[str(member.id)] = {"id": str(member.id), "name": member.name, "display_name": member.display_name}
+            res = list(users_set.values())
+            res.sort(key=lambda x: x["display_name"].lower())
+            return jsonify(res)
+        except Exception:
+            return jsonify([])
+
     # ── API — Logs ────────────────────────────────────────────────────────────
     @app.route("/api/logs")
     @login_required
@@ -177,6 +194,27 @@ def create_app() -> Flask:
                     "error_msg": r.error_msg,
                     "created_at": r.created_at.isoformat() if r.created_at else None
                 } for r in rows])
+        except Exception:
+            return jsonify([])
+
+    @app.route("/api/read_logs")
+    @login_required
+    def get_read_logs():
+        """Retorna os recibos de leitura das DMs."""
+        from models import MessageReadLog
+        limit = min(int(request.args.get("limit", 100)), 500)
+        try:
+            with get_session() as s:
+                rows = s.query(MessageReadLog).order_by(MessageReadLog.id.desc()).limit(limit).all()
+                result = []
+                for r in rows:
+                    task = s.query(TaskConfig).filter_by(id=r.task_id).first()
+                    result.append({
+                        "task_name": task.name if task else f"({r.task_id})",
+                        "user_name": r.user_name,
+                        "read_at": r.read_at.isoformat() if r.read_at else None
+                    })
+                return jsonify(result)
         except Exception:
             return jsonify([])
 
@@ -325,8 +363,10 @@ def create_app() -> Flask:
                 name=d["name"].strip()[:200],
                 description=d.get("description","")[:500],
                 type=d["type"],
-                channel_ids=_normalize_channels(d["channel_ids"]),
+                channel_ids=_normalize_channels(d.get("channel_ids", "")),
                 roles_to_mention=_normalize_channels(d.get("roles_to_mention", "")),
+                send_dm=bool(d.get("send_dm", False)),
+                target_users=_normalize_channels(d.get("target_users", "")),
                 message_group_id=d.get("message_group_id") or None,
                 schedule_config=json.dumps(d.get("schedule_config", {})),
                 active=d.get("active", True),
@@ -360,6 +400,8 @@ def create_app() -> Flask:
             if "type"             in d: t.type            = d["type"]
             if "channel_ids"      in d: t.channel_ids     = _normalize_channels(d["channel_ids"])
             if "roles_to_mention" in d: t.roles_to_mention = _normalize_channels(d["roles_to_mention"])
+            if "send_dm"          in d: t.send_dm          = bool(d["send_dm"])
+            if "target_users"     in d: t.target_users     = _normalize_channels(d["target_users"])
             if "message_group_id" in d: t.message_group_id= d["message_group_id"] or None
             if "schedule_config"  in d: t.schedule_config = json.dumps(d["schedule_config"])
             if "active"           in d: t.active          = bool(d["active"])
@@ -469,6 +511,8 @@ def _st(t):
     return {"id":t.id,"name":t.name,"description":t.description,"type":t.type,
             "channel_ids":t.channel_ids,"message_group_id":t.message_group_id,
             "roles_to_mention":getattr(t, "roles_to_mention", ""),
+            "send_dm":getattr(t, "send_dm", False),
+            "target_users":getattr(t, "target_users", ""),
             "schedule_config":json.loads(t.schedule_config or "{}"),
             "active":t.active,"test_mode":bool(t.test_mode),
             "created_at":t.created_at.isoformat() if t.created_at else None,
@@ -510,8 +554,12 @@ def _validate_task(d):
         e.append("name obrigatório")
     if d.get("type") not in VALID_TYPES:
         e.append("type inválido")
-    if not d.get("channel_ids"):
-        e.append("channel_ids obrigatório")
+    if d.get("send_dm"):
+        if not d.get("target_users"):
+            e.append("Nenhum usuário foi selecionado para a Mensagem Direta")
+    else:
+        if not d.get("channel_ids"):
+            e.append("Nenhum canal foi selecionado para disparo")
     if "schedule_config" in d:
         cfg = d.get("schedule_config")
         if not _valid_schedule_config(d.get("type"), cfg):

@@ -23,6 +23,7 @@ intents = discord.Intents.default()
 intents.messages       = True
 intents.guilds         = True
 intents.message_content = True
+intents.members        = True  # Necessário para listar membros no Painel Web (DMs)
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 

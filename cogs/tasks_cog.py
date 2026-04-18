@@ -3,7 +3,7 @@ import json, random, datetime, asyncio
 from discord.ext import tasks, commands
 from config import TIMEZONE
 from database import get_session
-from models import Settings, TaskConfig, MessageGroup, TaskExecutionLog
+from models import Settings, TaskConfig, MessageGroup, TaskExecutionLog, MessageReadLog
 from logger_setup import make_logger, purge_old_logs
 
 _bot_ref = None
@@ -101,6 +101,8 @@ def _active_tasks_as_dicts():
                 "active":          bool(t.active),
                 "channel_ids":     t.channel_ids or "",
                 "roles_to_mention":getattr(t, "roles_to_mention", ""),
+                "send_dm":         bool(getattr(t, "send_dm", False)),
+                "target_users":    getattr(t, "target_users", ""),
                 "schedule_config": schedule_config,
                 "messages":        msgs,
             })
@@ -155,6 +157,34 @@ class TasksCog(commands.Cog):
         print("[BOT] Reconectado com sucesso.")
         # Tentar enviar alerta num canal de monitoramento se configurado
         await self._send_alert("⚠️ Bot reconectado ao Discord após desconexão.")
+
+    @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type == discord.InteractionType.component:
+            custom_id = interaction.data.get("custom_id", "")
+            if custom_id.startswith("dm_read:"):
+                parts = custom_id.split(":")
+                task_id_str = parts[1] if len(parts) > 1 else "0"
+                try: task_id = int(task_id_str)
+                except ValueError: return
+                
+                try:
+                    with get_session() as s:
+                        log = MessageReadLog(
+                            task_id=task_id,
+                            user_id=str(interaction.user.id),
+                            user_name=interaction.user.name,
+                            read_at=now_utc()
+                        )
+                        s.add(log)
+                except Exception as e:
+                    self.tlog.error(f"Erro ao salvar read log: {e}")
+                
+                try:
+                    # Desarma o botao e aponta confirmacao
+                    await interaction.response.edit_message(content=interaction.message.content + "\n\n*(✅ Leitura confirmada)*", view=None)
+                except Exception:
+                    pass
 
     # ── Dispatcher ────────────────────────────────────────────────────────────
     @tasks.loop(minutes=1)
@@ -361,6 +391,84 @@ class TasksCog(commands.Cog):
         import discord
         now = now_tz()
         roles_prefix = self._get_roles_prefix(task)
+
+        if task.get("send_dm"):
+            users_str = task.get("target_users", "")
+            user_ids = []
+            for u in users_str.split(","):
+                u = u.strip()
+                if u:
+                    try: user_ids.append(int(u))
+                    except ValueError: pass
+                    
+            for uid in user_ids:
+                user = self.bot.get_user(uid)
+                if not user:
+                    try: user = await self.bot.fetch_user(uid)
+                    except Exception: pass
+                
+                status = "ERROR"
+                error_msg = ""
+                if user:
+                    try:
+                        raw_content = message_dict.get("content", "")
+                        content = self._format_message_text(raw_content, now, None)
+                        if is_test: content = f"🧪 **[MODO TESTE]**\n{content}"
+                        
+                        view = discord.ui.View(timeout=None)
+                        btn = discord.ui.Button(
+                            label="✅ Confirmar Leitura",
+                            style=discord.ButtonStyle.success,
+                            custom_id=f"dm_read:{task['id']}"
+                        )
+                        view.add_item(btn)
+
+                        kwargs = {"content": content, "view": view}
+
+                        if message_dict.get("is_embed"):
+                            color_hex = message_dict.get("embed_color", "")
+                            color_val = discord.Color.default()
+                            if color_hex and color_hex.startswith("#"):
+                                try: color_val = discord.Color(int(color_hex[1:], 16))
+                                except ValueError: pass
+                            
+                            emb = discord.Embed(description=content, color=color_val)
+                            if is_test: emb.title = "🧪 [MODO TESTE]"
+                            
+                            media_url = message_dict.get("media_url", "")
+                            if media_url: emb.set_image(url=media_url)
+                            
+                            kwargs["content"] = ""
+                            kwargs["embed"] = emb
+
+                        await user.send(**kwargs)
+                        status = "SUCCESS"
+                        self.tlog.info(f"task_id={task['id']} dm_user={uid} enviado OK")
+                        print(f"[BOT] task={task['name']} → DM para {user.name} → SUCCESS")
+                    except Exception as e:
+                        status = "ERROR"
+                        error_msg = str(e)
+                        self.tlog.exception(f"task_id={task['id']} dm_user={uid} erro: {e}")
+                else:
+                    status = "ERROR"
+                    error_msg = "Usuário não encontrado"
+                    self.tlog.error(f"task_id={task['id']} dm_user={uid} não encontrado")
+
+                if not is_test:
+                    try:
+                        with get_session() as s:
+                            log = TaskExecutionLog(
+                                task_id=task["id"],
+                                task_name=task["name"],
+                                channel_id=f"DM:{uid}",
+                                status=status,
+                                error_msg=error_msg,
+                                created_at=now_utc()
+                            )
+                            s.add(log)
+                    except Exception as db_e:
+                        self.tlog.error(f"Erro ao salvar TaskExecutionLog: {db_e}")
+            return
 
         for cid in _get_channel_ids(task):
             ch = self.bot.get_channel(cid)
