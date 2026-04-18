@@ -244,16 +244,17 @@ class TasksCog(commands.Cog):
         if days_of_week  and now.weekday() not in days_of_week: return
 
         cur = now.strftime("%H:%M")
-        if cur not in times: return
-
-        key = f"task_{task['id']}_sent_{now.strftime('%Y%m%d')}_{cur.replace(':','')}"
-        if _get(key): return
-
-        msg = self._pick(task)
-        if not msg: return
-        await self._send(task, msg)
-        _set(key, "1")
-        self.tlog.info(f"[fixed_times] task_id={task['id']} {now.strftime('%Y-%m-%d %H:%M')}")
+        
+        for target_time in times:
+            if cur >= target_time:
+                key = f"task_{task['id']}_sent_{now.strftime('%Y%m%d')}_{target_time.replace(':','')}"
+                if not _get(key):
+                    msg = self._pick(task)
+                    if msg:
+                        await self._send(task, msg)
+                    _set(key, "1")
+                    self.tlog.info(f"[fixed_times] task_id={task['id']} delay_safe=true target_time={target_time} disp_at={cur}")
+                    break # Se tiver mais atrasados, manda no próximo tick para não floodar
 
     async def _handle_interval_days(self, task, cfg, now):
         every      = int(cfg.get("every_days", 10))
@@ -290,14 +291,15 @@ class TasksCog(commands.Cog):
             self._sched_times[task["id"]] = sched
             _set(sched_key, sched)
 
-        if now.strftime("%H:%M") != sched: return
+        cur = now.strftime("%H:%M")
+        if cur < sched: return
 
         msg = self._pick(task)
         if not msg: return
         await self._send(task, msg)
         _set(sent_key, "1")
         self._sched_times.pop(task["id"], None)
-        self.tlog.info(f"[interval_days] task_id={task['id']} {today_str} {sched}")
+        self.tlog.info(f"[interval_days] task_id={task['id']} data={today_str} target_time={sched} disp_at={cur}")
 
     async def _handle_weekly(self, task, cfg, now):
         days_of_week = cfg.get("days_of_week", [0,1,2,3,4])
