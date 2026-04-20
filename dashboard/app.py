@@ -21,6 +21,7 @@ MAX_MSG_LEN = 1900  # Discord limita 2000, deixamos margem para o prefixo [TESTE
 
 def create_app() -> Flask:
     app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10MB limit
     app.secret_key = DASHBOARD_SECRET_KEY
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SECURE"] = DASHBOARD_COOKIE_SECURE
@@ -471,12 +472,14 @@ def create_app() -> Flask:
     @app.errorhandler(400)
     @app.errorhandler(401)
     @app.errorhandler(404)
+    @app.errorhandler(413)
     @app.errorhandler(429)
     @app.errorhandler(500)
     def handle_error(e):
+        code = getattr(e, "code", 500)
         if request.path.startswith("/api/"):
-            return jsonify({"error": str(e)}), e.code
-        return str(e), e.code
+            return jsonify({"error": str(e)}), code
+        return str(e), code
 
     @app.after_request
     def set_security_headers(response):

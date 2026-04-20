@@ -1534,15 +1534,26 @@ async function uploadImage(input) {
   formData.append('file', file);
   try {
     const r = await fetch('/api/upload', { method: 'POST', body: formData });
-    const d = await r.json();
-    if (d.ok) {
+    const contentType = r.headers.get("content-type");
+    if (r.ok && contentType && contentType.includes("application/json")) {
+      const d = await r.json();
       document.getElementById('new-media-url').value = d.url;
       status.textContent = '✅';
       toast('Imagem carregada!');
-    } else { throw new Error(d.error); }
+    } else {
+      let msg = 'Erro no upload';
+      if (contentType && contentType.includes("application/json")) {
+        const d = await r.json();
+        msg = d.error || msg;
+      } else {
+        msg = `Erro ${r.status}: Servidor retornou HTML (Verifique se está logado ou se o arquivo é muito grande)`;
+      }
+      throw new Error(msg);
+    }
   } catch (e) {
     status.textContent = '❌';
-    toast(e.message||'Erro no upload', false);
+    toast(e.message, false);
+    console.error(e);
   } finally { input.value = ''; }
 }
 
