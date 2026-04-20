@@ -1569,6 +1569,40 @@ async function uploadImage(input) {
   } finally { input.value = ''; }
 }
 
+// ── Gerenciamento de mensagens no grupo ──────────────────────────────────
+function resetMsgForm() {
+  var el;
+  el = document.getElementById('new-msg');         if(el) el.value = '';
+  el = document.getElementById('new-media-url');   if(el) el.value = '';
+  el = document.getElementById('new-is-embed');    if(el) el.checked = false;
+  el = document.getElementById('new-embed-color'); if(el) el.value = '#ffffff';
+  el = document.getElementById('upload-status');   if(el) el.textContent = '';
+}
+
+function editMsg(i) {
+  var m = editMsgs[i];
+  if(!m) return;
+  document.getElementById('new-msg').value = m.content || '';
+  document.getElementById('new-media-url').value = m.media_url || '';
+  document.getElementById('new-is-embed').checked = !!m.is_embed;
+  document.getElementById('new-embed-color').value = m.embed_color || '#ffffff';
+  editMsgs.splice(i, 1);
+  renderMsgs();
+  toast('Editando — altere e clique em Adicionar para salvar.');
+}
+
+function moveMsgUp(i) {
+  if(i <= 0 || i >= editMsgs.length) return;
+  var tmp = editMsgs[i]; editMsgs[i] = editMsgs[i-1]; editMsgs[i-1] = tmp;
+  renderMsgs();
+}
+
+function moveMsgDown(i) {
+  if(i < 0 || i >= editMsgs.length - 1) return;
+  var tmp = editMsgs[i]; editMsgs[i] = editMsgs[i+1]; editMsgs[i+1] = tmp;
+  renderMsgs();
+}
+
 // Interceptar showV para carregar dados das novas views
 var _origShowV=showV;
 showV=function(v,el){
