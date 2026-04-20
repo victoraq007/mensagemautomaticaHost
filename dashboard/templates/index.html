@@ -1280,7 +1280,11 @@ async function openGroupModal(id){
   const isEdit=!!id;
   document.getElementById('mg-title').textContent=isEdit?'Editar Grupo':'Novo Grupo';
   document.getElementById('btn-del-group').classList.toggle('hidden',!isEdit);
+  // Reset input fields each time the modal opens
   document.getElementById('new-msg').value='';
+  document.getElementById('new-media-url').value='';
+  document.getElementById('new-is-embed').checked=false;
+  document.getElementById('new-embed-color').value='';
   if(isEdit){
     try{
       const g=await api('GET',`/groups/${id}`);
@@ -1327,12 +1331,18 @@ async function addMsg(){
       const m=await api('POST',`/groups/${gid}/messages`,{content:c, is_embed:isE, embed_color:col, media_url:url});
       editMsgs.push(m);
       document.getElementById('new-msg').value='';
+      document.getElementById('new-media-url').value='';
+      document.getElementById('new-is-embed').checked=false;
+      document.getElementById('new-embed-color').value='';
       renderMsgs();
       toast('Mensagem adicionada!');
     }catch(e){toast('Erro: '+e.message,false);}
   }else{
     editMsgs.push({content:c, active:true, is_embed:isE, embed_color:col, media_url:url});
     document.getElementById('new-msg').value='';
+    document.getElementById('new-media-url').value='';
+    document.getElementById('new-is-embed').checked=false;
+    document.getElementById('new-embed-color').value='';
     renderMsgs();
   }
 }
