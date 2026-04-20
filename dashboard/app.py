@@ -438,6 +438,7 @@ def create_app() -> Flask:
             t.updated_at = datetime.datetime.utcnow()
             return jsonify(_st(t))
 
+    # ── FIX BUG-3.6: Excluir task agora remove Settings órfãos ──────────────
     @app.route("/api/tasks/<int:tid>", methods=["DELETE"])
     @login_required
     @limiter.limit("20/minute")
@@ -445,6 +446,8 @@ def create_app() -> Flask:
         with get_session() as s:
             t = s.query(TaskConfig).filter_by(id=tid).first()
             if not t: abort(404)
+            # FIX BUG-3.6: Limpar todas as chaves Settings associadas à task
+            s.query(Settings).filter(Settings.key.like(f"task_{tid}_%")).delete(synchronize_session=False)
             s.delete(t)
         return jsonify({"ok": True})
 

@@ -264,6 +264,7 @@ class TasksCog(commands.Cog):
         self._test_last[task["id"]] = now
         self.tlog.info(f"[TEST] task_id={task['id']} nome={task['name']} enviada.")
 
+    # ── FIX BUG-4.4: fixed_times — iterar reversed para enviar apenas o mais recente atrasado ──
     async def _handle_fixed_times(self, task, cfg, now):
         times         = cfg.get("times", [])
         days_of_month = cfg.get("days_of_month", [])
@@ -276,7 +277,10 @@ class TasksCog(commands.Cog):
 
         cur = now.strftime("%H:%M")
         
-        for target_time in times:
+        # FIX BUG-4.4: Iterar de trás pra frente — envia apenas o horário
+        # mais recente que ainda não foi enviado, evitando gotejamento de
+        # mensagens atrasadas (1 por tick) quando o bot volta de uma queda.
+        for target_time in reversed(sorted(times)):
             if cur >= target_time:
                 key = f"task_{task['id']}_sent_{now.strftime('%Y%m%d')}_{target_time.replace(':','')}"
                 if not _get(key):
@@ -285,7 +289,7 @@ class TasksCog(commands.Cog):
                         await self._send(task, msg)
                     _set(key, "1")
                     self.tlog.info(f"[fixed_times] task_id={task['id']} delay_safe=true target_time={target_time} disp_at={cur}")
-                    break # Se tiver mais atrasados, manda no próximo tick para não floodar
+                    break  # Envia apenas o mais recente atrasado por tick
 
     async def _handle_interval_days(self, task, cfg, now):
         every      = int(cfg.get("every_days", 10))
@@ -332,6 +336,7 @@ class TasksCog(commands.Cog):
         self._sched_times.pop(task["id"], None)
         self.tlog.info(f"[interval_days] task_id={task['id']} data={today_str} target_time={sched} disp_at={cur}")
 
+    # ── FIX BUG-4.2: weekly — incluir ano na chave para evitar colisão entre anos ──
     async def _handle_weekly(self, task, cfg, now):
         days_of_week = cfg.get("days_of_week", [0,1,2,3,4])
         hour_start   = int(cfg.get("hour_start", 9))
@@ -340,7 +345,9 @@ class TasksCog(commands.Cog):
         if now.weekday() not in days_of_week:       return
         if not (hour_start <= now.hour < hour_end): return
 
-        cur_week = str(now.isocalendar()[1])
+        # FIX BUG-4.2: Incluir ano ISO para evitar colisão na virada de ano
+        iso = now.isocalendar()
+        cur_week = f"{iso[0]}-W{iso[1]}"
         if _get(f"task_{task['id']}_last_week") == cur_week: return
 
         msg = self._pick(task)
@@ -349,6 +356,7 @@ class TasksCog(commands.Cog):
         _set(f"task_{task['id']}_last_week", cur_week)
         self.tlog.info(f"[weekly] task_id={task['id']} semana={cur_week}")
 
+    # ── FIX BUG-4.3: monthly — zero-padding no mês ──
     async def _handle_monthly(self, task, cfg, now):
         hour_start = int(cfg.get("hour_start", 9))
         hour_end   = int(cfg.get("hour_end", 18))
@@ -357,7 +365,8 @@ class TasksCog(commands.Cog):
         if months and now.month not in months:      return
         if not (hour_start <= now.hour < hour_end): return
 
-        cur = f"{now.year}-{now.month}"
+        # FIX BUG-4.3: Zero-padding no mês para consistência
+        cur = f"{now.year}-{now.month:02d}"
         if _get(f"task_{task['id']}_last_month") == cur: return
 
         msg = self._pick(task)
@@ -415,7 +424,11 @@ class TasksCog(commands.Cog):
                         raw_content = message_dict.get("content", "")
                         content = self._format_message_text(raw_content, now, None)
                         if is_test: content = f"🧪 **[MODO TESTE]**\n{content}"
-                        
+
+                        # FIX BUG-5.5: Truncar DMs que ultrapassem 2000 chars
+                        if len(content) > 2000:
+                            content = content[:1997] + "..."
+
                         view = discord.ui.View(timeout=None)
                         btn = discord.ui.Button(
                             label="✅ Confirmar Leitura",
@@ -509,8 +522,6 @@ class TasksCog(commands.Cog):
                             except ValueError:
                                 pass
                         
-                        # Movemos o content principal para a description do Embed (opcional)
-                        # ou mantemos o content normal e enviamos um Embed com a imagem.
                         emb = discord.Embed(description=content, color=color_val)
                         if is_test:
                             emb.title = "🧪 [MODO TESTE]"
@@ -529,9 +540,11 @@ class TasksCog(commands.Cog):
                             else:
                                 emb.set_image(url=media_url)
                         
-                        # enviamos mentions + content vazio no message body se o texto estiver no embed
-                        # ou mentions sozinhos, para pifar a notificacao
-                        kwargs["content"] = roles_prefix
+                        # FIX BUG-5.9: Guard para roles_prefix no embed path
+                        embed_content = roles_prefix
+                        if len(embed_content) > 2000:
+                            embed_content = embed_content[:1997] + "..."
+                        kwargs["content"] = embed_content
                         kwargs["embed"] = emb
 
                     await ch.send(**kwargs)

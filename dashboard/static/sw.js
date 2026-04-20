@@ -1,8 +1,10 @@
-const CACHE='bot-avisos-v1';
-const STATIC=['/','https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap'];
+const CACHE='bot-avisos-v2';
+// FIX BUG-8.2: Cachear rotas locais úteis (removida URL cross-origin do Google Fonts)
+const STATIC=['/','/login','/manifest.json','/icon-192.png','/icon-512.png'];
 
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/'])).catch(()=>{}));
+  // FIX BUG-8.2: Agora usa o array STATIC corretamente
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)).catch(()=>{}));
   self.skipWaiting();
 });
 self.addEventListener('activate',e=>{

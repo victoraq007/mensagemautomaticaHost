@@ -35,6 +35,9 @@ def auto_migrate(engine):
             cols = [c["name"] for c in inspector.get_columns("task_configs")]
             if "test_mode" not in cols:        conn.execute(text("ALTER TABLE task_configs ADD COLUMN test_mode BOOLEAN DEFAULT 0"))
             if "roles_to_mention" not in cols: conn.execute(text("ALTER TABLE task_configs ADD COLUMN roles_to_mention VARCHAR(500) DEFAULT ''"))
+            # FIX BUG-7.2: Adicionar colunas de DM que faltavam no auto_migrate
+            if "send_dm" not in cols:          conn.execute(text("ALTER TABLE task_configs ADD COLUMN send_dm BOOLEAN DEFAULT 0"))
+            if "target_users" not in cols:     conn.execute(text("ALTER TABLE task_configs ADD COLUMN target_users TEXT DEFAULT ''"))
 
 Base.metadata.create_all(engine)
 auto_migrate(engine)
