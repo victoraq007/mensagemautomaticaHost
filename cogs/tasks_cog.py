@@ -1,5 +1,5 @@
 # cogs/tasks_cog.py
-import json, random, datetime, asyncio
+import json, random, datetime, asyncio, os
 import discord
 from discord.ext import tasks, commands
 from config import TIMEZONE
@@ -437,7 +437,19 @@ class TasksCog(commands.Cog):
                             if is_test: emb.title = "🧪 [MODO TESTE]"
                             
                             media_url = message_dict.get("media_url", "")
-                            if media_url: emb.set_image(url=media_url)
+                            if media_url:
+                                if media_url.startswith("/static/uploads/"):
+                                    # Caminho relativo ao painel web
+                                    filename = media_url.split("/")[-1]
+                                    file_path = os.path.join("dashboard", "static", "uploads", filename)
+                                    if os.path.exists(file_path):
+                                        file = discord.File(file_path, filename=filename)
+                                        emb.set_image(url=f"attachment://{filename}")
+                                        kwargs["file"] = file
+                                    else:
+                                        emb.set_image(url=media_url)
+                                else:
+                                    emb.set_image(url=media_url)
                             
                             kwargs["content"] = ""
                             kwargs["embed"] = emb
@@ -505,7 +517,17 @@ class TasksCog(commands.Cog):
                         
                         media_url = message_dict.get("media_url", "")
                         if media_url:
-                            emb.set_image(url=media_url)
+                            if media_url.startswith("/static/uploads/"):
+                                filename = media_url.split("/")[-1]
+                                file_path = os.path.join("dashboard", "static", "uploads", filename)
+                                if os.path.exists(file_path):
+                                    file = discord.File(file_path, filename=filename)
+                                    emb.set_image(url=f"attachment://{filename}")
+                                    kwargs["file"] = file
+                                else:
+                                    emb.set_image(url=media_url)
+                            else:
+                                emb.set_image(url=media_url)
                         
                         # enviamos mentions + content vazio no message body se o texto estiver no embed
                         # ou mentions sozinhos, para pifar a notificacao

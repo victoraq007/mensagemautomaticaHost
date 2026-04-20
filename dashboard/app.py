@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, render_template, abort, redirect, url
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from config import (
     DASHBOARD_COOKIE_SECURE,
     DASHBOARD_PASSWORD,
@@ -73,6 +74,33 @@ def create_app() -> Flask:
     def logout():
         session.clear()
         return redirect("/login")
+
+    # ── Upload ───────────────────────────────────────────────────────────────
+    UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+    @app.route("/api/upload", methods=["POST"])
+    @login_required
+    @limiter.limit("20/minute")
+    def upload_file():
+        if 'file' not in request.files:
+            return jsonify({"error": "Nenhum arquivo enviado"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Nome de arquivo vazio"}), 400
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Evitar sobreposição com timestamp
+            base, ext = os.path.splitext(filename)
+            filename = f"{base}_{int(datetime.datetime.now().timestamp())}{ext}"
+            file.save(os.path.join(UPLOAD_FOLDER, filename))
+            return jsonify({"ok": True, "url": f"/static/uploads/{filename}"})
+        return jsonify({"error": "Extensão não permitida"}), 400
+
 
     # ── Página principal ──────────────────────────────────────────────────────
     @app.route("/")

@@ -705,7 +705,16 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
             <span style="font-size:11px; color:var(--t2);">Cor do Embed</span>
           </div>
           <input class="fi" id="new-media-url" placeholder="URL de Imagem (opcional)">
+          <div style="display:flex; gap:8px; margin-top:6px">
+            <input type="file" id="upload-media" style="display:none" accept="image/*" onchange="uploadImage(this)">
+            <button type="button" class="btn bg-b sm" style="width:100%" onclick="document.getElementById('upload-media').click()">
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3M10 3v11M6 7l4-4 4 4"/></svg>
+              Upload de Imagem
+            </button>
+            <span id="upload-status" style="font-size:10px; color:var(--t3); align-self:center"></span>
+          </div>
         </div>
+
         <button class="btn bg-b" style="width:100%" onclick="addMsg()">+ Adicionar Mensagem</button>
       </div>
     </div>
@@ -1514,6 +1523,27 @@ function toggleAutoReload(){
     clearInterval(_autoReloadTimer);
     _autoReloadTimer=null;
   }
+}
+
+async function uploadImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('upload-status');
+  status.textContent = 'Carregando...';
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    const r = await fetch('/api/upload', { method: 'POST', body: formData });
+    const d = await r.json();
+    if (d.ok) {
+      document.getElementById('new-media-url').value = d.url;
+      status.textContent = '✅';
+      toast('Imagem carregada!');
+    } else { throw new Error(d.error); }
+  } catch (e) {
+    status.textContent = '❌';
+    toast(e.message||'Erro no upload', false);
+  } finally { input.value = ''; }
 }
 
 // Interceptar showV para carregar dados das novas views
