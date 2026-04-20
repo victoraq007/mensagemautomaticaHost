@@ -215,6 +215,7 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
 .msg-txt{flex:1;font-size:12px;line-height:1.5;word-break:break-word;color:var(--t)}
 .msg-txt.off{opacity:.35;text-decoration:line-through}
 .msg-actions{display:flex;gap:4px;flex-shrink:0;margin-top:1px}
+.msg-thumb{width:40px;height:40px;object-fit:cover;border-radius:4px;margin-left:8px;vertical-align:middle}
 
 /* ── Instalar PWA banner ── */
 #pwa-banner{
@@ -1280,11 +1281,7 @@ async function openGroupModal(id){
   const isEdit=!!id;
   document.getElementById('mg-title').textContent=isEdit?'Editar Grupo':'Novo Grupo';
   document.getElementById('btn-del-group').classList.toggle('hidden',!isEdit);
-  // Reset input fields each time the modal opens
-  document.getElementById('new-msg').value='';
-  document.getElementById('new-media-url').value='';
-  document.getElementById('new-is-embed').checked=false;
-  document.getElementById('new-embed-color').value='';
+  resetMsgForm();
   if(isEdit){
     try{
       const g=await api('GET',`/groups/${id}`);
@@ -1302,6 +1299,7 @@ async function openGroupModal(id){
   renderMsgs();
   openModal('modal-group');
 }
+var editIndex = -1;
 function renderMsgs(){
   const el=document.getElementById('msg-edit');
   if(!editMsgs.length){
@@ -1310,9 +1308,13 @@ function renderMsgs(){
   }
   el.innerHTML=editMsgs.map((m,i)=>`<div class="msg-row">
     <span class="msg-txt${m.active===false?' off':''}">${m.is_embed?'<span class="badge bg-pu">Embed</span> ':''}${esc(m.content)}</span>
+    ${m.media_url?`<img src="${m.media_url}" class="msg-thumb" alt="thumb">`:''}
     <div class="msg-actions">
       ${m.id
         ?`<button class="btn bg-b sm" onclick="toggleMsg(${i})" title="${m.active!==false?'Desativar':'Ativar'}">${m.active!==false?'⏸':'▶'}</button>
+           <button class="btn bd sm" onclick="editMsg(${i})" title="Editar">✎</button>
+           <button class="btn bd sm" onclick="moveMsgUp(${i})" title="Subir">↑</button>
+           <button class="btn bd sm" onclick="moveMsgDown(${i})" title="Descer">↓</button>
            <button class="btn bd sm" onclick="delMsg(${i})" title="Excluir">✕</button>`
         :`<span style="font-size:10px;color:var(--t3);align-self:center">novo</span>
           <button class="btn bd sm" onclick="rmPending(${i})">✕</button>`}
