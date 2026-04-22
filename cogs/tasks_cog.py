@@ -450,7 +450,6 @@ class TasksCog(commands.Cog):
                                 except ValueError: pass
                             
                             emb = discord.Embed(description=content, color=color_val)
-                            if is_test: emb.title = "🧪 [MODO TESTE]"
                             
                             media_url = message_dict.get("media_url", "")
                             if media_url:
@@ -526,8 +525,6 @@ class TasksCog(commands.Cog):
                                 pass
                         
                         emb = discord.Embed(description=content, color=color_val)
-                        if is_test:
-                            emb.title = "🧪 [MODO TESTE]"
                         
                         media_url = message_dict.get("media_url", "")
                         if media_url:
