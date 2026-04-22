@@ -559,7 +559,7 @@ def _sm(m):
             "is_embed":getattr(m, "is_embed", False),
             "embed_color":getattr(m, "embed_color", ""),
             "media_url":getattr(m, "media_url", ""),
-            "msg_order":getattr(m, "msg_order", 0),
+            "msg_order":getattr(m, "msg_order", 0) or 0,
             "created_at":m.created_at.isoformat() if m.created_at else None,
             "length": len(m.content)}
 
@@ -568,7 +568,7 @@ def _sg(g, msgs=True):
          "message_count":len(g.messages),
          "created_at":g.created_at.isoformat() if g.created_at else None}
     if msgs:
-        sorted_msgs = sorted(g.messages, key=lambda x: (getattr(x, "msg_order", 0), x.id))
+        sorted_msgs = sorted(g.messages, key=lambda x: (getattr(x, "msg_order", 0) or 0, x.id))
         d["messages"] = [_sm(m) for m in sorted_msgs]
     return d
 
