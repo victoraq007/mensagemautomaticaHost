@@ -348,6 +348,38 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
 .tpl-copy-btn{position:absolute;top:10px;right:10px}
 .prompt-box{background:var(--bg);border:1px solid var(--b);border-radius:var(--r);padding:14px;font-size:11px;font-family:var(--mono);color:var(--t2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-top:8px}
 
+
+/* ── Preview Discord ── */
+.discord-preview{background:#313338;border-radius:8px;padding:16px 18px;font-family:'gg sans','Noto Sans',sans-serif;margin-top:10px}
+.discord-avatar{width:40px;height:40px;border-radius:50%;background:#5865f2;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.discord-msg-wrap{display:flex;gap:12px;align-items:flex-start}
+.discord-bot-name{font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
+.discord-bot-tag{font-size:10px;background:#5865f2;color:#fff;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:600;vertical-align:middle}
+.discord-body{font-size:14px;color:#dbdee1;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.discord-embed{border-left:4px solid #5865f2;background:#2b2d31;border-radius:0 4px 4px 0;padding:12px 14px;margin-top:8px;max-width:520px}
+.discord-embed-desc{font-size:14px;color:#dbdee1;line-height:1.5;white-space:pre-wrap}
+.discord-embed-img{width:100%;border-radius:4px;margin-top:10px;max-height:200px;object-fit:cover}
+.discord-role-mention{background:rgba(88,101,242,.3);color:#c9cdfb;border-radius:3px;padding:0 2px;font-weight:500}
+.discord-timestamp{font-size:11px;color:#87898c;margin-left:6px}
+/* ── Bulk import ── */
+.import-drop{border:2px dashed var(--b2);border-radius:var(--r2);padding:20px;text-align:center;color:var(--t3);font-size:12px;transition:.2s;cursor:pointer;background:var(--bg3)}
+.import-drop:hover,.import-drop.drag{border-color:var(--ac);color:var(--t2);background:rgba(88,101,242,.05)}
+.import-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.import-table th{background:var(--bg3);color:var(--t2);padding:7px 10px;text-align:left;font-weight:500;border-bottom:1px solid var(--b)}
+.import-table td{padding:7px 10px;border-bottom:1px solid var(--b);color:var(--t);vertical-align:top}
+.import-table tr:last-child td{border-bottom:none}
+.import-table tr.ok td{background:rgba(22,163,74,.05)}
+.import-table tr.err td{background:rgba(220,38,38,.05)}
+.import-count{font-size:11px;color:var(--t3);font-family:var(--mono);margin-top:6px}
+/* ── Template cards ── */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.tpl-card{background:var(--bg3);border:1px solid var(--b);border-radius:var(--r2);padding:14px 16px;position:relative}
+.tpl-card-title{font-size:13px;font-weight:600;color:var(--t);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.tpl-card-desc{font-size:11px;color:var(--t3);margin-bottom:10px;line-height:1.5}
+.tpl-card-meta{font-size:10px;color:var(--t3);font-family:var(--mono)}
+.tpl-copy-btn{position:absolute;top:10px;right:10px}
+.prompt-box{background:var(--bg);border:1px solid var(--b);border-radius:var(--r);padding:14px;font-size:11px;font-family:var(--mono);color:var(--t2);line-height:1.6;white-space:pre-wrap;max-height:200px;overflow-y:auto;margin-top:8px}
+
 </style>
 </head>
 <body>
@@ -562,9 +594,6 @@ html,body{height:100%;background:var(--bg);color:var(--t);font-family:var(--sans
             <li style="margin-bottom: 8px;">O banco de dados limpa inteligentemente relatórios antigos com mais de +30 dias sozinho todo amanhecer para evitar travamentos de uso de memória.</li>
             <li style="margin-bottom: 8px;"><strong>LABORATÓRIO (Modo Teste):</strong> Caso queira validar se suas marcações de cargos ou cores funcionaram perfeitamente no servidor: Ative a opção 🧪 Modo Teste lá no final da tela de Criação da Task. Isso anulará qualquer calendário configurado e ordenará o bot a disparar a mensagem a cada 2 minutos (Cuidado para não floodar canais principais).</li>
           </ul>
-          
-        </div>
-      </div>
 
           <h3 style="font-size:16px;margin-top:32px;margin-bottom:12px;font-weight:600;padding-bottom:4px;border-bottom:1px solid var(--b);">&#129302; Prompts Prontos para IA (Importacao em Lote)</h3>
           <p style="margin-bottom:12px;color:var(--t2);font-size:12px;">Copie um prompt, cole no ChatGPT ou Claude, descreva o assunto e importe o JSON gerado via <b>Grupos &#8594; Editar &#8594; Importar Lote</b>.</p>
@@ -663,204 +692,80 @@ Responda APENAS com JSON valido, sem explicacoes, sem markdown:
 ]</div>
             </div>
           </div>
-          <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 16px; color: var(--t2);">
-            <li style="margin-bottom: 6px;">Vá em <strong>Tasks -> Novo</strong>. </li>
-            <li style="margin-bottom: 6px;">Selecione os canais do Discord desejados (você pode selecionar mais de um), e pesquise pelos <strong>Cargos</strong> se você quer garantir que as pessoas sejam pingadas (alertadas nativamente).</li>
-            <li style="margin-bottom: 6px;">No campo <strong>Grupo de Mensagem</strong>, selecione o grupo que você recheou no passo anterior.</li>
-            <li style="margin-bottom: 6px;">Selezione o tipo de rotina de agendamento desejado (Diária, Semanal, Horário fixo etc).</li>
-            <li style="margin-bottom: 6px;"><strong>Para testar agora mesmo:</strong> Ligue o <strong>Modo Teste 🧪</strong>! Ele ignorará seus agendamentos para forçar que o robô envie aquela notificação a cada 2 minutos (Cuidado para não flodar o servidor).</li>
-          </ul>
           
-          <div style="background: var(--bg3); border-left: 4px solid var(--ac); padding: 14px; border-radius: var(--r); margin-top: 24px;">
-            <strong style="color: var(--t);">💡 Como funciona o rodízio do bot?</strong><br>
-            <span style="color: var(--t2);">Sempre que uma Task programada acordar no relógio, o Bot vai olhar para o <em>Grupo de Mensagem</em> atrelado e vai <strong>escolher 1 mensagem aleatória</strong> dentre as ativas lá. Assim, dependendo de quantas você botar no grupo, as notificações sempre parecerão ter sido dadas por um humano em tempo real.</span>
-          </div>
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
-
-<!-- ── Modal Task ── -->
-<div class="ov" id="modal-task" onclick="closeBg(event,'modal-task')">
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt-title">
-  <div class="mh">
-    <span class="mt" id="mt-title">Nova Task</span>
-    <button class="btn bg-b sm" onclick="closeModal('modal-task')" aria-label="Fechar">✕</button>
-  </div>
+<!-- Modal Importacao em Lote -->
+<div class="ov" id="modal-import" onclick="closeBg(event,'modal-import')">
+<div class="modal" role="dialog" aria-modal="true" style="max-width:720px">
+  <div class="mh"><span class="mt">&#128229; Importar Mensagens em Lote</span><button class="btn bg-b sm" onclick="closeModal('modal-import')">&#10005;</button></div>
   <div class="mb">
-    <input type="hidden" id="t-id">
-    <div class="fr">
-      <div class="fg">
-        <label class="fl" for="t-name">Nome *</label>
-        <input class="fi" id="t-name" placeholder="ex: Aviso semanal suporte" autocomplete="off">
+    <input type="hidden" id="import-gid">
+    <div id="import-step1">
+      <div style="background:rgba(88,101,242,.08);border:1px solid rgba(88,101,242,.2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:#818cf8;margin-bottom:4px">&#128203; Como usar</div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.6">1. Va em <b>Como Usar &#8594; Prompts para IA</b> e copie o prompt desejado<br>2. Cole no ChatGPT ou Claude e descreva o assunto<br>3. Cole o JSON gerado abaixo</div>
       </div>
-      <div class="fg">
-        <label class="fl" for="t-type">Tipo de recorrência *</label>
-        <select class="fs" id="t-type" onchange="renderSched()">
-          <option value="weekly">Semanal</option>
-          <option value="monthly">Mensal</option>
-          <option value="fixed_times">Dias + horários fixos</option>
-          <option value="interval_days">A cada N dias</option>
-          <option value="test">Modo teste</option>
-        </select>
+      <label class="fl">Cole o JSON gerado pela IA</label>
+      <div class="import-drop" id="import-drop" onclick="document.getElementById('import-json').focus()">
+        <div style="font-size:24px;margin-bottom:6px">&#128203;</div>
+        <div>Clique aqui e cole o JSON (Ctrl+V) ou arraste um arquivo .json</div>
       </div>
+      <textarea id="import-json" class="fta" style="min-height:120px;margin-top:8px;font-family:var(--mono);font-size:11px" placeholder="Cole aqui o JSON gerado pela IA" oninput="parseImportJSON()"></textarea>
+      <div class="import-count" id="import-count"></div>
     </div>
-    <div class="fg">
-      <label class="fl" for="t-desc">Descrição</label>
-      <input class="fi" id="t-desc" placeholder="Opcional" autocomplete="off">
-    </div>
-
-    <!-- Destino -->
-    <div class="fg" style="display:flex;gap:16px;margin-top:14px;background:var(--bg3);padding:10px;border-radius:var(--r);border:1px solid var(--b)">
-      <label class="fl" style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t)">
-        <input type="radio" name="t_dest_type" id="dest_channel" value="channel" checked onchange="toggleDestType()">
-        Canal Público
-      </label>
-      <label class="fl" style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t)">
-        <input type="radio" name="t_dest_type" id="dest_dm" value="dm" onchange="toggleDestType()">
-        Mensagem Direta (DM) Particular
-      </label>
-    </div>
-
-    <div id="dest_channel_container">
-      <!-- Canais -->
-      <div class="fg" style="margin-top:14px">
-        <label class="fl" style="display:flex;align-items:center;gap:8px">
-          Canais do Discord *
-          <button type="button" class="btn bg-b sm" onclick="reloadChannels(true)" style="padding:2px 7px;font-size:10px">↻ atualizar</button>
-        </label>
-        <input class="ch-search" id="ch-search" placeholder="Buscar canal..." oninput="filterChannels()" autocomplete="off">
-        <div class="ch-list" id="ch-list"></div>
-        <div class="ch-info" id="ch-sel-info">Nenhum canal selecionado</div>
+    <div id="import-step2" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600;color:var(--t)" id="import-preview-title"></span>
+        <button class="btn bg-b sm" onclick="showImportStep1()">&#8592; Voltar</button>
       </div>
-
-      <!-- Cargos / Roles -->
-      <div class="fg" style="margin-top:14px">
-        <label class="fl" style="display:flex;align-items:center;gap:8px">Cargos para Mencionar (@Roles)</label>
-        <input class="ch-search" id="r-search" placeholder="Buscar cargo..." oninput="filterRoles()" autocomplete="off">
-        <div class="ch-list" id="r-list"></div>
-        <div class="ch-info" id="r-sel-info">Nenhum cargo selecionado</div>
+      <div style="max-height:340px;overflow-y:auto;border:1px solid var(--b);border-radius:var(--r)">
+        <table class="import-table"><thead><tr><th style="width:32px">#</th><th>Mensagem</th><th style="width:60px">Tipo</th><th style="width:70px">Status</th></tr></thead><tbody id="import-tbody"></tbody></table>
       </div>
-    </div>
-
-    <div id="dest_dm_container" style="display:none">
-        <!-- Usuarios DM -->
-        <div class="fg" style="margin-top:14px">
-          <label class="fl" style="display:flex;align-items:center;gap:8px">
-            Usuários p/ Mensagem Direta (Privado) *
-            <button type="button" class="btn bg-b sm" onclick="loadUsers(false)" style="padding:2px 7px;font-size:10px">↻ atualizar</button>
-          </label>
-          <input class="ch-search" id="u-search" placeholder="Buscar usuário..." oninput="filterUsers()" autocomplete="off">
-          <div class="ch-list" id="u-list"></div>
-          <div class="ch-info" id="u-sel-info">Nenhum usuário selecionado</div>
-        </div>
-    </div>
-
-    <script>
-      function toggleDestType(){
-        var isDm = document.getElementById('dest_dm').checked;
-        document.getElementById('dest_channel_container').style.display = isDm ? 'none' : 'block';
-        document.getElementById('dest_dm_container').style.display = isDm ? 'block' : 'none';
-      }
-    </script>
-
-    <div class="fg">
-      <label class="fl" for="t-group">Grupo de mensagens</label>
-      <select class="fs" id="t-group"><option value="">— nenhum —</option></select>
-    </div>
-
-    <!-- Pick Mode -->
-    <div class="fg" style="margin-top:14px">
-      <label class="fl" for="t-pick-mode">Modo de Rotação das Mensagens do Grupo</label>
-      <select class="fs" id="t-pick-mode" data-s="pick_mode">
-        <option value="random">Sorteio Aleatório a cada disparo</option>
-        <option value="sequential">Acompanhar a ordem cadastradas na lista (Sequencial)</option>
-      </select>
-    </div>
-
-    <!-- Modo teste -->
-    <div class="fg" style="display:flex;align-items:center;gap:12px;background:var(--am-bg);border:1px solid rgba(217,119,6,.25);border-radius:var(--r);padding:11px 13px">
-      <label class="tog">
-        <input type="checkbox" id="t-testmode" onchange="renderSched()">
-        <div class="tok"></div><div class="toh"></div>
-      </label>
-      <div>
-        <div style="font-size:12px;font-weight:500;color:var(--am)">🧪 Modo teste</div>
-        <div style="font-size:10px;color:var(--t3)">Ignora agendamento — envia a cada N minutos</div>
-      </div>
-    </div>
-
-    <div class="fg" style="margin-top:14px">
-      <label class="fl">Configuração de agendamento</label>
-      <div class="sched" id="sched-fields"></div>
+      <div class="import-count" id="import-summary"></div>
     </div>
   </div>
   <div class="mf">
-    <button class="btn bd sm hidden" id="btn-del-task" onclick="delTask()">Excluir</button>
-    <span style="flex:1"></span>
-    <button class="btn bg-b" onclick="closeModal('modal-task')">Cancelar</button>
-    <button class="btn bp" onclick="saveTask()">Salvar</button>
+    <button class="btn bg-b" onclick="closeModal('modal-import')">Cancelar</button>
+    <button class="btn bp" id="btn-import-confirm" onclick="confirmImport()" style="display:none">&#10003; Importar todas</button>
   </div>
 </div>
 </div>
 
-<!-- ── Modal Grupo ── -->
-<div class="ov" id="modal-group" onclick="closeBg(event,'modal-group')">
-<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mg-title">
-  <div class="mh">
-    <span class="mt" id="mg-title">Novo Grupo</span>
-    <button class="btn bg-b sm" onclick="closeModal('modal-group')" aria-label="Fechar">✕</button>
-  </div>
+<!-- Modal Preview Discord -->
+<div class="ov" id="modal-preview" onclick="closeBg(event,'modal-preview')">
+<div class="modal" role="dialog" aria-modal="true" style="max-width:560px">
+  <div class="mh"><span class="mt">&#128065; Preview no Discord</span><button class="btn bg-b sm" onclick="closeModal('modal-preview')">&#10005;</button></div>
   <div class="mb">
-    <input type="hidden" id="g-id">
-    <div class="fg">
-      <label class="fl" for="g-name">Nome *</label>
-      <input class="fi" id="g-name" placeholder="ex: Avisos de Ponto" autocomplete="off">
-    </div>
-    <div class="fg">
-      <label class="fl" for="g-desc">Descrição</label>
-      <input class="fi" id="g-desc" placeholder="Opcional" autocomplete="off">
-    </div>
-    <div class="fg">
-      <label class="fl">Mensagens do Grupo</label>
-      <div class="msg-list" id="msg-edit"></div>
-      <div style="background:var(--bg3); padding:10px; border-radius:var(--r); border:1px solid var(--b); margin-top:8px">
-        <label class="fl">Nova Mensagem</label>
-        <textarea class="fta" id="new-msg" placeholder="Texto (variáveis permitidas: {hoje}, {hora}, {dia_semana}, {canal})" style="min-height:54px;margin-bottom:8px"></textarea>
-        <label class="fl" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="new-is-embed"> Usar Rich Embed no envio</label>
-        <div class="fr" style="margin-top:6px; margin-bottom:8px">
-          <div style="display:flex; gap:8px; align-items:center;">
-            <input type="color" class="fi" id="new-embed-color" value="#ffffff" style="width:40px; height:38px; padding:2px; cursor:pointer;" title="Escolher cor da borda do Embed">
-            <span style="font-size:11px; color:var(--t2);">Cor do Embed</span>
-          </div>
-          <input class="fi" id="new-media-url" placeholder="URL de Imagem (opcional)">
-          <div style="display:flex; gap:8px; margin-top:6px">
-            <input type="file" id="upload-media" style="display:none" accept="image/*" onchange="uploadImage(this)">
-            <button type="button" class="btn bg-b sm" style="width:100%" onclick="document.getElementById('upload-media').click()">
-              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v3a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3M10 3v11M6 7l4-4 4 4"/></svg>
-              Upload de Imagem
-            </button>
-            <span id="upload-status" style="font-size:10px; color:var(--t3); align-self:center"></span>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:10px">Simulacao visual de como a mensagem aparecera no Discord</div>
+    <div class="discord-preview">
+      <div class="discord-msg-wrap">
+        <div class="discord-avatar">&#129302;</div>
+        <div style="flex:1;min-width:0">
+          <div><span class="discord-bot-name">Bot Avisos</span><span class="discord-bot-tag">BOT</span><span class="discord-timestamp" id="preview-ts"></span></div>
+          <div id="preview-roles" style="margin-bottom:4px;display:none"></div>
+          <div id="preview-body-wrap"><div class="discord-body" id="preview-body"></div></div>
+          <div id="preview-embed-wrap" style="display:none">
+            <div class="discord-embed" id="preview-embed">
+              <div class="discord-embed-desc" id="preview-embed-desc"></div>
+              <img id="preview-embed-img" style="display:none" class="discord-embed-img">
+            </div>
           </div>
         </div>
-
-        <button class="btn bg-b" style="width:100%" onclick="addMsg()">+ Adicionar Mensagem</button>
       </div>
     </div>
+    <div style="margin-top:14px">
+      <label class="fl">Simular mencao de cargo</label>
+      <input class="fi" id="preview-role-input" placeholder="ex: @Suporte, @Analistas" oninput="updatePreview()">
+      <label class="fl" style="margin-top:10px">Simular canal</label>
+      <input class="fi" id="preview-channel-input" placeholder="ex: #avisos-gerais" value="#avisos-gerais" oninput="updatePreview()">
+    </div>
   </div>
-  <div class="mf">
-    <button class="btn bd sm hidden" id="btn-del-group" onclick="delGroup()">Excluir</button>
-    <span style="flex:1"></span>
-    <button class="btn bg-b" onclick="closeModal('modal-group')">Cancelar</button>
-    <button class="btn bg-b" onclick="openImport()" style="margin-right:4px">📥 Importar Lote</button>
-    <button class="btn bp" onclick="saveGroup()">Salvar</button>
-  </div>
+  <div class="mf"><button class="btn bg-b" onclick="closeModal('modal-preview')">Fechar</button></div>
 </div>
 </div>
 
-<!-- ── Banner PWA ── -->
 <!-- Modal Importacao em Lote -->
 <div class="ov" id="modal-import" onclick="closeBg(event,'modal-import')">
 <div class="modal" role="dialog" aria-modal="true" style="max-width:720px">
@@ -1814,6 +1719,154 @@ showV=function(v,el){
   if(v==='logs') loadLogs();
   if(v==='tasks'||v==='groups'){ clearInterval(_autoReloadTimer); _autoReloadTimer=null; }
 };
+
+// ── Importacao em Lote ────────────────────────────────────────────────────
+var _importRows = [];
+
+function openImport() {
+  var gid = document.getElementById('g-id').value;
+  if (!gid) { toast('Salve o grupo primeiro antes de importar', false); return; }
+  document.getElementById('import-gid').value = gid;
+  document.getElementById('import-json').value = '';
+  document.getElementById('import-count').textContent = '';
+  document.getElementById('btn-import-confirm').style.display = 'none';
+  showImportStep1();
+  openModal('modal-import');
+}
+
+function showImportStep1() {
+  document.getElementById('import-step1').style.display = 'block';
+  document.getElementById('import-step2').style.display = 'none';
+  document.getElementById('btn-import-confirm').style.display = 'none';
+}
+
+function parseImportJSON() {
+  var raw = document.getElementById('import-json').value.trim();
+  var countEl = document.getElementById('import-count');
+  if (!raw) { countEl.textContent = ''; _importRows = []; return; }
+  raw = raw.replace(/^```json?\s*/i, '').replace(/\s*```$/, '').trim();
+  try {
+    var parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('Esperado um array JSON');
+    _importRows = parsed.map(function(item, i) {
+      var content = (item.content || item.text || item.mensagem || item.message || '').trim();
+      var ok = content.length > 0 && content.length <= 1900;
+      return { content: content, is_embed: !!item.is_embed, embed_color: item.embed_color || '', media_url: item.media_url || '', ok: ok, idx: i + 1 };
+    });
+    var valid = _importRows.filter(function(r) { return r.ok; }).length;
+    var invalid = _importRows.length - valid;
+    countEl.textContent = _importRows.length + ' mensagens detectadas | ' + valid + ' validas' + (invalid ? ' | ' + invalid + ' com problema' : '');
+    showImportPreviewTable();
+  } catch(e) {
+    countEl.textContent = 'JSON invalido: ' + e.message;
+    _importRows = [];
+    document.getElementById('btn-import-confirm').style.display = 'none';
+  }
+}
+
+function showImportPreviewTable() {
+  if (!_importRows.length) return;
+  var valid = _importRows.filter(function(r) { return r.ok; });
+  document.getElementById('import-preview-title').textContent = _importRows.length + ' mensagens | ' + valid.length + ' serao importadas';
+  var tbody = document.getElementById('import-tbody');
+  tbody.innerHTML = _importRows.map(function(r) {
+    var sb = r.ok ? '<span class="badge bg-gr">OK</span>' : '<span class="badge bg-rd">Erro</span>';
+    var tb = r.is_embed ? '<span class="badge bg-pu">Embed</span>' : '<span class="badge bg-gy">Texto</span>';
+    var prev = esc(r.content).substring(0, 80) + (r.content.length > 80 ? '...' : '');
+    return '<tr class="' + (r.ok ? 'ok' : 'err') + '"><td style="color:var(--t3)">' + r.idx + '</td><td>' + prev + '</td><td>' + tb + '</td><td>' + sb + '</td></tr>';
+  }).join('');
+  document.getElementById('import-summary').textContent = valid.length + ' de ' + _importRows.length + ' mensagens serao importadas.';
+  document.getElementById('import-step1').style.display = 'none';
+  document.getElementById('import-step2').style.display = 'block';
+  document.getElementById('btn-import-confirm').style.display = valid.length ? 'inline-flex' : 'none';
+}
+
+async function confirmImport() {
+  var gid = document.getElementById('import-gid').value;
+  var valid = _importRows.filter(function(r) { return r.ok; });
+  if (!valid.length) { toast('Nenhuma mensagem valida', false); return; }
+  var btn = document.getElementById('btn-import-confirm');
+  btn.textContent = 'Importando...'; btn.disabled = true;
+  var ok = 0, err = 0;
+  for (var i = 0; i < valid.length; i++) {
+    var m = valid[i];
+    try { await api('POST', '/groups/' + gid + '/messages', { content: m.content, is_embed: m.is_embed, embed_color: m.embed_color, media_url: m.media_url }); ok++; }
+    catch(e) { err++; }
+    btn.textContent = 'Importando ' + (ok + err) + '/' + valid.length + '...';
+  }
+  closeModal('modal-import');
+  try { var g = await api('GET', '/groups/' + gid); editMsgs = g.messages || []; renderMsgs(); } catch(e) {}
+  toast(ok + ' mensagens importadas!' + (err ? ' (' + err + ' erros)' : ''));
+  btn.textContent = 'Importar todas'; btn.disabled = false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var drop = document.getElementById('import-drop');
+  if (!drop) return;
+  drop.addEventListener('dragover', function(e) { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', function() { drop.classList.remove('drag'); });
+  drop.addEventListener('drop', function(e) {
+    e.preventDefault(); drop.classList.remove('drag');
+    var file = e.dataTransfer.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) { document.getElementById('import-json').value = ev.target.result; parseImportJSON(); };
+    reader.readAsText(file);
+  });
+});
+
+// ── Preview Discord ───────────────────────────────────────────────────────
+var _previewMsg = null;
+
+function previewMsg(i) {
+  var m = editMsgs[i]; if (!m) return;
+  _previewMsg = m; updatePreview(); openModal('modal-preview');
+}
+
+function updatePreview() {
+  if (!_previewMsg) return;
+  var now = new Date();
+  document.getElementById('preview-ts').textContent = 'Hoje as ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  var dias = ['Domingo','Segunda-feira','Terca-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sabado'];
+  var canal = (document.getElementById('preview-channel-input') ? document.getElementById('preview-channel-input').value : '#avisos-gerais');
+  var content = (_previewMsg.content || '')
+    .replace(/\{hoje\}/g, now.toLocaleDateString('pt-BR'))
+    .replace(/\{hora\}/g, now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}))
+    .replace(/\{dia_semana\}/g, dias[now.getDay()])
+    .replace(/\{canal\}/g, '<span class="discord-role-mention">' + esc(canal) + '</span>');
+  var roleInput = document.getElementById('preview-role-input') ? document.getElementById('preview-role-input').value.trim() : '';
+  var rolesEl = document.getElementById('preview-roles');
+  if (roleInput) {
+    rolesEl.innerHTML = roleInput.split(',').map(function(r) { return '<span class="discord-role-mention">' + esc(r.trim()) + '</span>'; }).join(' ');
+    rolesEl.style.display = 'block';
+  } else { rolesEl.style.display = 'none'; }
+  if (_previewMsg.is_embed) {
+    document.getElementById('preview-body-wrap').style.display = 'none';
+    document.getElementById('preview-embed-wrap').style.display = 'block';
+    document.getElementById('preview-embed').style.borderLeftColor = _previewMsg.embed_color || '#5865f2';
+    document.getElementById('preview-embed-desc').innerHTML = content;
+    var img = document.getElementById('preview-embed-img');
+    if (_previewMsg.media_url) { img.src = _previewMsg.media_url; img.style.display = 'block'; } else { img.style.display = 'none'; }
+  } else {
+    document.getElementById('preview-body-wrap').style.display = 'block';
+    document.getElementById('preview-embed-wrap').style.display = 'none';
+    document.getElementById('preview-body').innerHTML = content;
+  }
+}
+
+// ── Copiar prompts ────────────────────────────────────────────────────────
+function copyPrompt(type) {
+  var el = document.getElementById('prompt-' + type); if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(function() { toast('Prompt copiado! Cole no ChatGPT ou Claude.'); });
+}
+
+// ── visualViewport fix (teclado virtual Android) ──────────────────────────
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', function() {
+    var vh = window.visualViewport.height;
+    document.querySelectorAll('.modal').forEach(function(m) { m.style.maxHeight = (vh - 20) + 'px'; });
+  });
+}
+
 
 // ── Importacao em Lote ────────────────────────────────────────────────────
 var _importRows = [];
