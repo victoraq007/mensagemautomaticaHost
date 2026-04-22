@@ -468,6 +468,18 @@ class TasksCog(commands.Cog):
                             
                             kwargs["content"] = ""
                             kwargs["embed"] = emb
+                        else:
+                            media_url = message_dict.get("media_url", "")
+                            if media_url:
+                                if media_url.startswith("/static/uploads/"):
+                                    filename = media_url.split("/")[-1]
+                                    file_path = os.path.join("dashboard", "static", "uploads", filename)
+                                    if os.path.exists(file_path):
+                                        kwargs["file"] = discord.File(file_path, filename=filename)
+                                    else:
+                                        kwargs["content"] += f"\n{media_url}"
+                                else:
+                                    kwargs["content"] += f"\n{media_url}"
 
                         await user.send(**kwargs)
                         status = "SUCCESS"
@@ -546,6 +558,18 @@ class TasksCog(commands.Cog):
                             embed_content = embed_content[:1997] + "..."
                         kwargs["content"] = embed_content
                         kwargs["embed"] = emb
+                    else:
+                        media_url = message_dict.get("media_url", "")
+                        if media_url:
+                            if media_url.startswith("/static/uploads/"):
+                                filename = media_url.split("/")[-1]
+                                file_path = os.path.join("dashboard", "static", "uploads", filename)
+                                if os.path.exists(file_path):
+                                    kwargs["file"] = discord.File(file_path, filename=filename)
+                                else:
+                                    kwargs["content"] += f"\n{media_url}"
+                            else:
+                                kwargs["content"] += f"\n{media_url}"
 
                     await ch.send(**kwargs)
                     status = "SUCCESS"
