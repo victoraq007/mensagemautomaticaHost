@@ -22,6 +22,12 @@ def alter_table():
         print(f"Ignorando ou erro na tabela messages: {e}")
 
     try:
+        cursor.execute("ALTER TABLE messages ADD COLUMN msg_order INTEGER DEFAULT 0")
+        print("Coluna msg_order adicionada com sucesso!")
+    except sqlite3.OperationalError as e:
+        print(f"Ignorando msg_order: {e}")
+
+    try:
         # TaskConfig table
         cursor.execute("ALTER TABLE task_configs ADD COLUMN roles_to_mention TEXT DEFAULT ''")
         print("Tabela task_configs (roles_to_mention) alterada!")

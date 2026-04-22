@@ -372,6 +372,34 @@ def create_app() -> Flask:
             s.delete(m)
         return jsonify({"ok": True})
 
+    @app.route("/api/groups/<int:gid>/messages/order", methods=["PUT"])
+    @login_required
+    @limiter.limit("60/minute")
+    def update_messages_order(gid):
+        d = request.get_json(force=True)
+        order_list = d.get("order", [])
+        if not isinstance(order_list, list):
+            abort(400, "order deve ser uma lista de IDs")
+        with get_session() as s:
+            for idx, msg_id in enumerate(order_list):
+                m = s.query(Message).filter_by(id=msg_id, group_id=gid).first()
+                if m:
+                    m.msg_order = idx
+            return jsonify({"ok": True})
+
+    @app.route("/api/export", methods=["GET"])
+    @login_required
+    def export_all():
+        with get_session() as s:
+            tasks = s.query(TaskConfig).all()
+            groups = s.query(MessageGroup).all()
+            
+            export_data = {
+                "tasks": [_st(t) for t in tasks],
+                "groups": [_sg(g, msgs=True) for g in groups]
+            }
+            return jsonify(export_data)
+
     # ── API — Tasks ───────────────────────────────────────────────────────────
     @app.route("/api/tasks", methods=["GET"])
     @login_required
@@ -531,6 +559,7 @@ def _sm(m):
             "is_embed":getattr(m, "is_embed", False),
             "embed_color":getattr(m, "embed_color", ""),
             "media_url":getattr(m, "media_url", ""),
+            "msg_order":getattr(m, "msg_order", 0),
             "created_at":m.created_at.isoformat() if m.created_at else None,
             "length": len(m.content)}
 
@@ -538,7 +567,9 @@ def _sg(g, msgs=True):
     d = {"id":g.id,"name":g.name,"description":g.description,
          "message_count":len(g.messages),
          "created_at":g.created_at.isoformat() if g.created_at else None}
-    if msgs: d["messages"] = [_sm(m) for m in g.messages]
+    if msgs:
+        sorted_msgs = sorted(g.messages, key=lambda x: (getattr(x, "msg_order", 0), x.id))
+        d["messages"] = [_sm(m) for m in sorted_msgs]
     return d
 
 def _st(t):

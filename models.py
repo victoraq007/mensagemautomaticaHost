@@ -33,6 +33,7 @@ class Message(Base):
     embed_color= Column(String(50), default="")
     media_url  = Column(String(500), default="")
     active     = Column(Boolean, default=True)
+    msg_order  = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     group = relationship("MessageGroup", back_populates="messages")
 
