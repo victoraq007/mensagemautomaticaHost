@@ -768,11 +768,11 @@
     }
 
     .msg-txt {
-      flex: 1;
       font-size: 12px;
       line-height: 1.5;
       word-break: break-word;
-      color: var(--t)
+      color: var(--t);
+      margin-bottom: 4px;
     }
 
     .msg-txt.off {
@@ -787,13 +787,20 @@
       margin-top: 1px
     }
 
+    .msg-content-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
     .msg-thumb {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-left: 8px;
-      vertical-align: middle
+      max-height: 120px;
+      max-width: 100%;
+      object-fit: contain;
+      border-radius: 6px;
+      border: 1px solid var(--b2);
+      align-self: flex-start;
+      margin-top: 6px;
     }
 
     /* ── Instalar PWA banner ── */
@@ -2150,7 +2157,7 @@
                   style="background:var(--bg3); padding:10px; border-radius:var(--r); border:1px solid var(--b); margin-top:8px">
                   <label class="fl">Nova Mensagem</label>
                   <textarea class="fta" id="new-msg"
-                    placeholder="Texto (variáveis: {hoje}, {hora}, {dia_semana}, {canal})"
+                    placeholder="Texto (variáveis: {hoje}, {hora}, {dia_semana}, {canal}, {nome}, {usuario})"
                     style="min-height:54px;margin-bottom:8px"></textarea>
                   <label class="fl" style="display:flex;align-items:center;gap:6px"><input type="checkbox"
                       id="new-is-embed"> Usar Rich Embed no envio</label>
@@ -2885,8 +2892,10 @@
               return;
             }
             el.innerHTML = editMsgs.map((m, i) => `<div class="msg-row" data-id="${m.id || ''}" data-index="${i}">
-    <span class="msg-txt${m.active === false ? ' off' : ''}">${m.is_embed ? '<span class="badge bg-pu">Embed</span> ' : ''}${esc(m.content)}</span>
-    ${m.media_url ? `<img src="${m.media_url}" class="msg-thumb" alt="thumb">` : ''}
+    <div class="msg-content-wrapper">
+      <div class="msg-txt${m.active === false ? ' off' : ''}">${m.is_embed ? '<span class="badge bg-pu">Embed</span> ' : ''}${esc(m.content)}</div>
+      ${m.media_url ? `<img src="${m.media_url}" class="msg-thumb" alt="thumb">` : ''}
+    </div>
     <div class="msg-actions">
       ${m.id
                 ? `<button class="btn bg-b sm" onclick="toggleMsg(${i})" title="${m.active !== false ? 'Desativar' : 'Ativar'}">${m.active !== false ? '⏸' : '▶'}</button>
@@ -3482,7 +3491,9 @@
               .replace(/\{hoje\}/g, now.toLocaleDateString('pt-BR'))
               .replace(/\{hora\}/g, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
               .replace(/\{dia_semana\}/g, dias[now.getDay()])
-              .replace(/\{canal\}/g, '<span class="discord-role-mention">' + esc(canal) + '</span>');
+              .replace(/\{canal\}/g, '<span class="discord-role-mention">' + esc(canal) + '</span>')
+              .replace(/\{nome\}/g, 'Fulano')
+              .replace(/\{usuario\}/g, '<span class="discord-role-mention">@Fulano</span>');
             var content = typeof marked !== 'undefined' ? marked.parse(rawContent) : rawContent;
             var roleInput = document.getElementById('preview-role-input') ? document.getElementById('preview-role-input').value.trim() : '';
             var rolesEl = document.getElementById('preview-roles');

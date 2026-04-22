@@ -376,7 +376,7 @@ class TasksCog(commands.Cog):
         self.tlog.info(f"[monthly] task_id={task['id']} mês={cur}")
 
     # ── Envio ─────────────────────────────────────────────────────────────────
-    def _format_message_text(self, text: str, now, ch) -> str:
+    def _format_message_text(self, text: str, now, ch, user=None) -> str:
         dias_semana = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
         t = text
         t = t.replace("{hoje}", now.strftime('%d/%m/%Y'))
@@ -384,6 +384,9 @@ class TasksCog(commands.Cog):
         t = t.replace("{dia_semana}", dias_semana[now.weekday()])
         if ch:
             t = t.replace("{canal}", f"<#{ch.id}>")
+        if user:
+            t = t.replace("{nome}", getattr(user, 'display_name', user.name))
+            t = t.replace("{usuario}", f"<@{user.id}>")
         return t
 
     def _get_roles_prefix(self, task) -> str:
@@ -422,7 +425,7 @@ class TasksCog(commands.Cog):
                 if user:
                     try:
                         raw_content = message_dict.get("content", "")
-                        content = self._format_message_text(raw_content, now, None)
+                        content = self._format_message_text(raw_content, now, None, user=user)
                         if is_test: content = f"🧪 **[MODO TESTE]**\n{content}"
 
                         # FIX BUG-5.5: Truncar DMs que ultrapassem 2000 chars
