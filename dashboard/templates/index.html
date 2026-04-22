@@ -3325,59 +3325,6 @@
             });
           });
 
-          // ── Preview Discord ───────────────────────────────────────────────────────
-          var _previewMsg = null;
-
-          function previewMsg(i) {
-            var m = editMsgs[i]; if (!m) return;
-            _previewMsg = m; updatePreview(); openModal('modal-preview');
-          }
-
-          function updatePreview() {
-            if (!_previewMsg) return;
-            var now = new Date();
-            document.getElementById('preview-ts').textContent = 'Hoje as ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-            var dias = ['Domingo', 'Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado'];
-            var canal = (document.getElementById('preview-channel-input') ? document.getElementById('preview-channel-input').value : '#avisos-gerais');
-            var content = (_previewMsg.content || '')
-              .replace(/\{hoje\}/g, now.toLocaleDateString('pt-BR'))
-              .replace(/\{hora\}/g, now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-              .replace(/\{dia_semana\}/g, dias[now.getDay()])
-              .replace(/\{canal\}/g, '<span class="discord-role-mention">' + esc(canal) + '</span>');
-            var roleInput = document.getElementById('preview-role-input') ? document.getElementById('preview-role-input').value.trim() : '';
-            var rolesEl = document.getElementById('preview-roles');
-            if (roleInput) {
-              rolesEl.innerHTML = roleInput.split(',').map(function (r) { return '<span class="discord-role-mention">' + esc(r.trim()) + '</span>'; }).join(' ');
-              rolesEl.style.display = 'block';
-            } else { rolesEl.style.display = 'none'; }
-            if (_previewMsg.is_embed) {
-              document.getElementById('preview-body-wrap').style.display = 'none';
-              document.getElementById('preview-embed-wrap').style.display = 'block';
-              document.getElementById('preview-embed').style.borderLeftColor = _previewMsg.embed_color || '#5865f2';
-              document.getElementById('preview-embed-desc').innerHTML = content;
-              var img = document.getElementById('preview-embed-img');
-              if (_previewMsg.media_url) { img.src = _previewMsg.media_url; img.style.display = 'block'; } else { img.style.display = 'none'; }
-            } else {
-              document.getElementById('preview-body-wrap').style.display = 'block';
-              document.getElementById('preview-embed-wrap').style.display = 'none';
-              document.getElementById('preview-body').innerHTML = content;
-            }
-          }
-
-          // ── Copiar prompts ────────────────────────────────────────────────────────
-          function copyPrompt(type) {
-            var el = document.getElementById('prompt-' + type); if (!el) return;
-            navigator.clipboard.writeText(el.textContent.trim()).then(function () { toast('Prompt copiado! Cole no ChatGPT ou Claude.'); });
-          }
-
-          // ── visualViewport fix (teclado virtual Android) ──────────────────────────
-          if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', function () {
-              var vh = window.visualViewport.height;
-              document.querySelectorAll('.modal').forEach(function (m) { m.style.maxHeight = (vh - 20) + 'px'; });
-            });
-          }
-
 
           // ── Importacao em Lote ────────────────────────────────────────────────────
           var _importRows = [];
@@ -3459,19 +3406,6 @@
             btn.textContent = 'Importar todas'; btn.disabled = false;
           }
 
-          document.addEventListener('DOMContentLoaded', function () {
-            var drop = document.getElementById('import-drop');
-            if (!drop) return;
-            drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('drag'); });
-            drop.addEventListener('dragleave', function () { drop.classList.remove('drag'); });
-            drop.addEventListener('drop', function (e) {
-              e.preventDefault(); drop.classList.remove('drag');
-              var file = e.dataTransfer.files[0]; if (!file) return;
-              var reader = new FileReader();
-              reader.onload = function (ev) { document.getElementById('import-json').value = ev.target.result; parseImportJSON(); };
-              reader.readAsText(file);
-            });
-          });
 
           // ── Preview Discord ───────────────────────────────────────────────────────
           var _previewMsg = null;
